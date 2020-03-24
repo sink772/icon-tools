@@ -133,8 +133,7 @@ class Governance:
 
 def main():
     parser = argparse.ArgumentParser(prog='check_gov', description='Check governance status')
-    parser.add_argument('endpoint', type=str,
-                        help='an endpoint for connection')
+    parser.add_argument('endpoint', type=str, nargs='?', default="local", help='an endpoint for connection')
     args = parser.parse_args()
 
     endpoint_map = {

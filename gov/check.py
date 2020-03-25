@@ -27,7 +27,7 @@ from iconsdk.wallet.wallet import KeyWallet
 
 
 def print_response(header, msg):
-    print(f'{header}: {json.dumps(msg, indent=4)}')
+    print(f'"{header}": {json.dumps(msg, indent=4)}')
 
 
 class TxHandler:
@@ -98,6 +98,15 @@ class Governance:
     def get_revision(self):
         return self._call("getRevision")
 
+    def get_step_price(self):
+        return self._call("getStepPrice")
+
+    def get_max_step_limit(self, ctype):
+        params = {
+            "contextType": ctype
+        }
+        return self._call("getMaxStepLimit", params)
+
     def get_step_costs(self):
         return self._call("getStepCosts")
 
@@ -112,10 +121,16 @@ class Governance:
 
     def print_info(self):
         print('[Governance]')
-        print_response('Version', self.get_version())
-        print_response('Revision', self.get_revision())
-        print_response('StepCosts', self.get_step_costs())
-        print_response('ServiceConfig', self.get_service_config())
+        print_response('version', self.get_version())
+        print_response('revision', self.get_revision())
+        print_response('stepPrice', self.get_step_price())
+        max_step_limits = {
+            "invoke": self.get_max_step_limit("invoke"),
+            "query": self.get_max_step_limit("query")
+        }
+        print_response('stepLimit', max_step_limits)
+        print_response('stepCosts', self.get_step_costs())
+        print_response('serviceConfig', self.get_service_config())
 
     def check_if_audit_enabled(self):
         service_config = self.get_service_config()
@@ -133,7 +148,7 @@ class Governance:
 
 def main():
     parser = argparse.ArgumentParser(prog='check_gov', description='Check governance status')
-    parser.add_argument('endpoint', type=str, nargs='?', default="local", help='an endpoint for connection')
+    parser.add_argument('endpoint', type=str, nargs='?', default="mainnet", help='an endpoint for connection')
     args = parser.parse_args()
 
     endpoint_map = {
@@ -143,11 +158,11 @@ def main():
         "bicon": 'https://bicon.net.solidwallet.io',
     }
     url = endpoint_map.get(args.endpoint, args.endpoint)
-    print(f"endpoint: {url}/api/v3")
+    print('[Endpoint]')
+    print(f"{args.endpoint}: {url}/api/v3\n")
 
     icon_service = IconService(HTTPProvider(f"{url}/api/v3"))
     owner_wallet = KeyWallet.load("../keystore_test1", "test1_Account")
-    print("owner address: ", owner_wallet.get_address())
 
     gov = Governance(icon_service, owner_wallet)
     gov.print_info()

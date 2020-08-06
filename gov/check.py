@@ -85,7 +85,6 @@ class Governance:
 
     def _call(self, method, params=None):
         call = CallBuilder() \
-            .from_(self._owner.get_address()) \
             .to(self.ADDRESS) \
             .method(method) \
             .params(params) \
@@ -146,23 +145,19 @@ class Governance:
         return handler.invoke(self._owner, self.ADDRESS, "acceptScore", params)
 
 
-def main():
-    parser = argparse.ArgumentParser(prog='check_gov', description='Check governance status')
-    parser.add_argument('endpoint', type=str, nargs='?', default="mainnet", help='an endpoint for connection')
-    args = parser.parse_args()
-
+def run(endpoint: str):
     endpoint_map = {
         "local": 'http://localhost:9000',
         "mainnet": 'https://ctz.solidwallet.io',
         "testnet": 'https://test-ctz.solidwallet.io',
         "bicon": 'https://bicon.net.solidwallet.io',
     }
-    url = endpoint_map.get(args.endpoint, args.endpoint)
+    url = endpoint_map.get(endpoint, endpoint)
     print('[Endpoint]')
-    print(f"{args.endpoint}: {url}/api/v3\n")
+    print(f"{endpoint}: {url}/api/v3\n")
 
     icon_service = IconService(HTTPProvider(f"{url}/api/v3"))
-    owner_wallet = KeyWallet.load("../keystore_test1", "test1_Account")
+    owner_wallet = KeyWallet.load("./conf/keystore_test1", "test1_Account")
 
     gov = Governance(icon_service, owner_wallet)
     gov.print_info()
@@ -171,6 +166,13 @@ def main():
         print('Audit: enabled')
     else:
         print('Audit: disabled')
+
+
+def main():
+    parser = argparse.ArgumentParser(prog='check_gov', description='Check governance status')
+    parser.add_argument('endpoint', type=str, nargs='?', default="mainnet", help='an endpoint for connection')
+    args = parser.parse_args()
+    run(args.endpoint)
 
 
 if __name__ == "__main__":

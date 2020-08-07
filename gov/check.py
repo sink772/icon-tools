@@ -13,67 +13,14 @@
 # limitations under the License.
 
 import argparse
-import json
 import sys
-from time import sleep
 
 from iconsdk.builder.call_builder import CallBuilder
-from iconsdk.builder.transaction_builder import DeployTransactionBuilder, CallTransactionBuilder
-from iconsdk.exception import JSONRPCException
 from iconsdk.icon_service import IconService
 from iconsdk.providers.http_provider import HTTPProvider
-from iconsdk.signed_transaction import SignedTransaction
 from iconsdk.wallet.wallet import KeyWallet
 
-
-def print_response(header, msg):
-    print(f'"{header}": {json.dumps(msg, indent=4)}')
-
-
-class TxHandler:
-    ZERO_ADDRESS = "cx0000000000000000000000000000000000000000"
-
-    def __init__(self, service):
-        self._icon_service = service
-
-    def _deploy(self, owner, to, content, params, limit):
-        transaction = DeployTransactionBuilder() \
-            .from_(owner.get_address()) \
-            .to(to) \
-            .step_limit(limit) \
-            .version(3) \
-            .nid(3) \
-            .content_type("application/zip") \
-            .content(content) \
-            .params(params) \
-            .build()
-        return self._icon_service.send_transaction(SignedTransaction(transaction, owner))
-
-    def install(self, owner, content, params=None, limit=0x50000000):
-        return self._deploy(owner, self.ZERO_ADDRESS, content, params, limit)
-
-    def update(self, owner, to, content, params=None, limit=0x70000000):
-        return self._deploy(owner, to, content, params, limit)
-
-    def invoke(self, owner, to, method, params, limit=0x10000000):
-        transaction = CallTransactionBuilder() \
-            .from_(owner.get_address()) \
-            .to(to) \
-            .step_limit(limit) \
-            .nid(3) \
-            .method(method) \
-            .params(params) \
-            .build()
-        return self._icon_service.send_transaction(SignedTransaction(transaction, owner))
-
-    def get_tx_result(self, tx_hash):
-        while True:
-            try:
-                tx_result = self._icon_service.get_transaction_result(tx_hash)
-                return tx_result
-            except JSONRPCException as e:
-                print(e.message)
-                sleep(2)
+from util import TxHandler, print_response
 
 
 class Governance:

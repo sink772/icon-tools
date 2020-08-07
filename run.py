@@ -3,8 +3,8 @@
 import argparse
 import sys
 
-from gov import check
 from iiss import iscore
+from score import gov
 
 
 def address_type(string):
@@ -35,7 +35,7 @@ def main():
 
     args = parser.parse_args()
     if args.command == 'gov':
-        check.run(args.endpoint)
+        gov.run(args.endpoint)
     elif args.command == 'iscore':
         iscore.run(args.endpoint, args.address)
 

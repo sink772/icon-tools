@@ -12,15 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import argparse
-import sys
-
 from iconsdk.builder.call_builder import CallBuilder
-from iconsdk.icon_service import IconService
-from iconsdk.providers.http_provider import HTTPProvider
 from iconsdk.wallet.wallet import KeyWallet
 
-from util import TxHandler, print_response
+from util import TxHandler, print_response, get_icon_service
 
 
 class Governance:
@@ -69,7 +64,8 @@ class Governance:
         print('[Governance]')
         print_response('version', self.get_version())
         print_response('revision', self.get_revision())
-        print_response('stepPrice', self.get_step_price())
+        step_price = self.get_step_price()
+        print(f'"stepPrice": {step_price} ({int(step_price, 16)})')
         max_step_limits = {
             "invoke": self.get_max_step_limit("invoke"),
             "query": self.get_max_step_limit("query")
@@ -93,17 +89,7 @@ class Governance:
 
 
 def run(endpoint: str):
-    endpoint_map = {
-        "local": 'http://localhost:9000',
-        "mainnet": 'https://ctz.solidwallet.io',
-        "testnet": 'https://test-ctz.solidwallet.io',
-        "bicon": 'https://bicon.net.solidwallet.io',
-    }
-    url = endpoint_map.get(endpoint, endpoint)
-    print('[Endpoint]')
-    print(f"{endpoint}: {url}/api/v3\n")
-
-    icon_service = IconService(HTTPProvider(f"{url}/api/v3"))
+    icon_service = get_icon_service(endpoint)
     owner_wallet = KeyWallet.load("./conf/keystore_test1", "test1_Account")
 
     gov = Governance(icon_service, owner_wallet)
@@ -113,17 +99,3 @@ def run(endpoint: str):
         print('Audit: enabled')
     else:
         print('Audit: disabled')
-
-
-def main():
-    parser = argparse.ArgumentParser(prog='check_gov', description='Check governance status')
-    parser.add_argument('endpoint', type=str, nargs='?', default="mainnet", help='an endpoint for connection')
-    args = parser.parse_args()
-    run(args.endpoint)
-
-
-if __name__ == "__main__":
-    try:
-        sys.exit(main())
-    except KeyboardInterrupt:
-        print("exit")

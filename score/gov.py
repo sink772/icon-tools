@@ -12,26 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from iconsdk.builder.call_builder import CallBuilder
 from iconsdk.wallet.wallet import KeyWallet
 
+from score import Score
 from util import TxHandler, print_response, get_icon_service
 
 
-class Governance:
+class Governance(Score):
     ADDRESS = "cx0000000000000000000000000000000000000001"
 
     def __init__(self, service, owner):
-        self._icon_service = service
+        super().__init__(service, self.ADDRESS)
         self._owner = owner
-
-    def _call(self, method, params=None):
-        call = CallBuilder() \
-            .to(self.ADDRESS) \
-            .method(method) \
-            .params(params) \
-            .build()
-        return self._icon_service.call(call)
 
     def get_version(self):
         return self._call("getVersion")

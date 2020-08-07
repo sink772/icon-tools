@@ -12,30 +12,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from iconsdk.builder.call_builder import CallBuilder
-
+from score.chain import ChainScore
 from util import print_response, get_icon_service
 
 
 class IScore(object):
-    ZERO_ADDRESS = "cx0000000000000000000000000000000000000000"
 
     def __init__(self, service):
-        self._icon_service = service
-
-    def _call(self, method, params=None):
-        call = CallBuilder() \
-            .to(self.ZERO_ADDRESS) \
-            .method(method) \
-            .params(params) \
-            .build()
-        return self._icon_service.call(call)
+        self._chain = ChainScore(service)
 
     def query(self, address):
         params = {
             "address": address
         }
-        return self._call("queryIScore", params)
+        return self._chain.call("queryIScore", params)
 
     def print_status(self, address):
         print('[IScore]')

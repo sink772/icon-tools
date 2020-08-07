@@ -12,19 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from iconsdk.builder.call_builder import CallBuilder
+from score import Score
 
 
-class Score:
+class ChainScore(Score):
+    ADDRESS = "cx0000000000000000000000000000000000000000"
 
-    def __init__(self, service, address):
-        self._icon_service = service
-        self._address = address
+    def __init__(self, service):
+        super().__init__(service, self.ADDRESS)
 
-    def _call(self, method, params=None):
-        call = CallBuilder() \
-            .to(self._address) \
-            .method(method) \
-            .params(params) \
-            .build()
-        return self._icon_service.call(call)
+    def call(self, method, params=None):
+        return self._call(method, params)

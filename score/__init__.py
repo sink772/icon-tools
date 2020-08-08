@@ -14,12 +14,15 @@
 
 from iconsdk.builder.call_builder import CallBuilder
 
+from util import TxHandler
+
 
 class Score:
 
     def __init__(self, service, address):
         self._icon_service = service
         self._address = address
+        self._tx_handler = TxHandler(service)
 
     def _call(self, method, params=None):
         call = CallBuilder() \
@@ -28,3 +31,6 @@ class Score:
             .params(params) \
             .build()
         return self._icon_service.call(call)
+
+    def _invoke(self, wallet, method, params=None):
+        return self._tx_handler.invoke(wallet, self._address, method, params)

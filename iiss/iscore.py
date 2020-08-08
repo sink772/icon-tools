@@ -12,8 +12,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import getpass
+import json
+
+from iconsdk.exception import KeyStoreException
+from iconsdk.wallet.wallet import KeyWallet
+
 from score.chain import ChainScore
-from util import print_response, get_icon_service
+from util import die, print_response, get_icon_service
+
+
+def get_address_from_keystore(keystore):
+    path = keystore.name
+    with open(path, encoding='utf-8-sig') as f:
+        keyfile: dict = json.load(f)
+        return keyfile.get('address')
 
 
 class IScore(object):
@@ -27,6 +40,17 @@ class IScore(object):
         }
         return self._chain.call("queryIScore", params)
 
+    def claim(self, keystore):
+        confirm = input('\n==> Do you want to claim your IScore? (y/n) ')
+        if confirm == 'y':
+            try:
+                passwd = getpass.getpass()
+                wallet = KeyWallet.load(keystore.name, passwd)
+                tx_hash = self._chain.invoke(wallet, "claimIScore")
+                print(f'\n==> Success: https://tracker.icon.foundation/transaction/{tx_hash}')
+            except KeyStoreException as e:
+                die(e.message)
+
     def print_status(self, address):
         print('[IScore]')
         result = self.query(address)
@@ -34,7 +58,17 @@ class IScore(object):
         print('EstimatedICX =', int(result['estimatedICX'], 16) / 10**18)
 
 
-def run(endpoint, address):
-    icon_service = get_icon_service(endpoint)
+def run(args):
+    icon_service = get_icon_service(args.endpoint)
     iscore = IScore(icon_service)
+    if args.keystore:
+        address = get_address_from_keystore(args.keystore)
+    elif args.address:
+        address = args.address
+    else:
+        die('Error: keystore or address should be specified')
     iscore.print_status(address)
+    if args.claim:
+        if not args.keystore:
+            die('Error: keystore should be specified to claim')
+        iscore.claim(args.keystore)

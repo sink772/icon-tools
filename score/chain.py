@@ -23,3 +23,6 @@ class ChainScore(Score):
 
     def call(self, method, params=None):
         return self._call(method, params)
+
+    def invoke(self, wallet, method, params=None):
+        return self._invoke(wallet, method, params)

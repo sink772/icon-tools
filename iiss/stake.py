@@ -17,6 +17,7 @@ import getpass
 from iconsdk.exception import KeyStoreException
 from iconsdk.wallet.wallet import KeyWallet
 
+from iiss.delegate import Delegate
 from score.chain import ChainScore
 from util import die, in_icx, in_loop, print_response, get_icon_service, get_address_from_keystore
 
@@ -55,6 +56,7 @@ class Stake(object):
             print('Total ICX balance =', total_icx)
             input_value = input('\n==> New staking amount (in ICX)? ')
             new_amount = self._check_value(input_value, int(total_icx))
+            self._check_total_delegated(address, in_loop(new_amount))
             print('Requested amount =', new_amount, f'({in_loop(new_amount)} loop)')
             try:
                 passwd = getpass.getpass()
@@ -79,6 +81,11 @@ class Stake(object):
             die(f'Error: value should be 0 <= (value) <= {maximum}')
         except ValueError:
             die(f'Error: value should be integer')
+
+    def _check_total_delegated(self, address, amount):
+        total_delegated = Delegate(self._icon_service).get_total_delegated(address)
+        if amount <= total_delegated:
+            die(f'Error: amount ({amount}) should be larger than the current total delegated ({total_delegated})')
 
 
 def run(args):

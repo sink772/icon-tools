@@ -2,7 +2,7 @@
 
 import argparse
 
-from iiss import iscore
+from iiss import iscore, stake
 from score import gov
 
 
@@ -37,6 +37,11 @@ class Command(object):
         iscore_parser.add_argument('--address', type=address_type, help='target address to perform operations')
         iscore_parser.add_argument('--claim', action='store_true', help='claim the reward that has been received')
 
+        # create a parser for 'stake' command
+        stake_parser = subparsers.add_parser('stake', help='Query and set staking')
+        stake_parser.add_argument('--address', type=address_type, help='target address to perform operations')
+        stake_parser.add_argument('--set', action='store_true', help='set new staking amount')
+
         args = parser.parse_args()
         getattr(self, args.command)(args)
 
@@ -48,6 +53,13 @@ class Command(object):
     def iscore(args):
         iscore.run(args)
 
+    @staticmethod
+    def stake(args):
+        stake.run(args)
+
 
 if __name__ == "__main__":
-    Command()
+    try:
+        Command()
+    except KeyboardInterrupt:
+        print('exit')

@@ -28,6 +28,14 @@ def die(message):
     sys.exit(-1)
 
 
+def in_icx(value):
+    return value / 10**18
+
+
+def in_loop(value):
+    return value * 10**18
+
+
 def print_response(header, msg):
     print(f'"{header}": {json.dumps(msg, indent=4)}')
 

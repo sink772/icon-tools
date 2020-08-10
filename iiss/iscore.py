@@ -19,7 +19,7 @@ from iconsdk.exception import KeyStoreException
 from iconsdk.wallet.wallet import KeyWallet
 
 from score.chain import ChainScore
-from util import die, print_response, get_icon_service
+from util import die, in_icx, print_response, get_icon_service
 
 
 def get_address_from_keystore(keystore):
@@ -41,7 +41,7 @@ class IScore(object):
         return self._chain.call("queryIScore", params)
 
     def claim(self, keystore):
-        confirm = input('\n==> Do you want to claim your IScore? (y/n) ')
+        confirm = input('\n==> Are you sure you want to claim the IScore? (y/n) ')
         if confirm == 'y':
             try:
                 passwd = getpass.getpass()
@@ -55,7 +55,7 @@ class IScore(object):
         print('[IScore]')
         result = self.query(address)
         print_response(address, result)
-        print('EstimatedICX =', int(result['estimatedICX'], 16) / 10**18)
+        print('EstimatedICX =', in_icx(int(result['estimatedICX'], 16)))
 
 
 def run(args):

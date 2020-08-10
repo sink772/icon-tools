@@ -53,6 +53,13 @@ def get_icon_service(endpoint):
     return IconService(HTTPProvider(url, 3))
 
 
+def get_address_from_keystore(keystore):
+    path = keystore.name
+    with open(path, encoding='utf-8-sig') as f:
+        keyfile: dict = json.load(f)
+        return keyfile.get('address')
+
+
 class TxHandler:
     ZERO_ADDRESS = "cx0000000000000000000000000000000000000000"
 

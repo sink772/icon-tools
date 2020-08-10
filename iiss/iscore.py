@@ -13,20 +13,12 @@
 # limitations under the License.
 
 import getpass
-import json
 
 from iconsdk.exception import KeyStoreException
 from iconsdk.wallet.wallet import KeyWallet
 
 from score.chain import ChainScore
-from util import die, in_icx, print_response, get_icon_service
-
-
-def get_address_from_keystore(keystore):
-    path = keystore.name
-    with open(path, encoding='utf-8-sig') as f:
-        keyfile: dict = json.load(f)
-        return keyfile.get('address')
+from util import die, in_icx, print_response, get_icon_service, get_address_from_keystore
 
 
 class IScore(object):

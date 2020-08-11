@@ -2,6 +2,7 @@
 
 import argparse
 
+from icx import icx
 from iiss import iscore, stake, delegate
 from score import gov
 
@@ -32,6 +33,10 @@ class Command(object):
         # create a parser for 'gov' command
         subparsers.add_parser('gov', help='Check governance status')
 
+        # create a parser for 'balance' command
+        balance_parser = subparsers.add_parser('balance', help='Get ICX balance of given address')
+        balance_parser.add_argument('--address', type=address_type, help='target address to perform operations')
+
         # create a parser for 'iscore' command
         iscore_parser = subparsers.add_parser('iscore', help='Query and claim IScore')
         iscore_parser.add_argument('--address', type=address_type, help='target address to perform operations')
@@ -53,6 +58,10 @@ class Command(object):
     @staticmethod
     def gov(args):
         gov.run(args.endpoint)
+
+    @staticmethod
+    def balance(args):
+        icx.balance(args)
 
     @staticmethod
     def iscore(args):

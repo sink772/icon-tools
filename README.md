@@ -1,0 +1,29 @@
+# ICON Tools
+
+A collection of CLI commands to perform the following actions.
+  * Check governance status of given network
+  * Query and claim your IScore
+  * Query and set staking
+  * Query and set delegations
+
+## Usage
+
+```bash
+$ ./run.py -h
+usage: run.py [-h] [-e ENDPOINT] [-k KEYSTORE] command ...
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -e ENDPOINT, --endpoint ENDPOINT
+                        an endpoint for connection
+  -k KEYSTORE, --keystore KEYSTORE
+                        keystore file for creating transactions
+
+Available commands:
+  command
+    gov                 Check governance status
+    balance             Get ICX balance of given address
+    iscore              Query and claim IScore
+    stake               Query and set staking
+    delegate            Query and set delegations
+```

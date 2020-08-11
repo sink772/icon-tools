@@ -2,7 +2,7 @@
 
 import argparse
 
-from iiss import iscore, stake
+from iiss import iscore, stake, delegate
 from score import gov
 
 
@@ -42,6 +42,11 @@ class Command(object):
         stake_parser.add_argument('--address', type=address_type, help='target address to perform operations')
         stake_parser.add_argument('--set', action='store_true', help='set new staking amount')
 
+        # create a parser for 'delegate' command
+        delegate_parser = subparsers.add_parser('delegate', help='Query and set delegations')
+        delegate_parser.add_argument('--address', type=address_type, help='target address to perform operations')
+        delegate_parser.add_argument('--set', action='store_true', help='set new delegations')
+
         args = parser.parse_args()
         getattr(self, args.command)(args)
 
@@ -56,6 +61,10 @@ class Command(object):
     @staticmethod
     def stake(args):
         stake.run(args)
+
+    @staticmethod
+    def delegate(args):
+        delegate.run(args)
 
 
 if __name__ == "__main__":

@@ -38,7 +38,8 @@ class Delegate(object):
     def set(self, wallet, delegations):
         delegation_list = []
         for address, value in delegations.items():
-            delegation_list.append({"address": address, "value": value})
+            if int(value, 16) > 0:
+                delegation_list.append({"address": address, "value": value})
         params = {
             "delegations": delegation_list
         }

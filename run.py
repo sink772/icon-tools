@@ -51,6 +51,8 @@ class Command(object):
         delegate_parser = subparsers.add_parser('delegate', help='Query and set delegations')
         delegate_parser.add_argument('--address', type=address_type, help='target address to perform operations')
         delegate_parser.add_argument('--set', action='store_true', help='set new delegations')
+        delegate_parser.add_argument('--prep', type=address_type, metavar='ADDRESS',
+                                     help='get P-Rep register information')
 
         args = parser.parse_args()
         getattr(self, args.command)(args)

@@ -15,7 +15,7 @@
 import argparse
 import getpass
 
-from iconsdk.exception import KeyStoreException
+from iconsdk.exception import KeyStoreException, JSONRPCException
 from iconsdk.wallet.wallet import KeyWallet
 
 from run import address_type
@@ -34,6 +34,12 @@ class Delegate(object):
             "address": address
         }
         return self._chain.call("getDelegation", params)
+
+    def get_prep(self, address):
+        params = {
+            "address": address
+        }
+        return self._chain.call("getPRep", params)
 
     def set(self, wallet, delegations):
         delegation_list = []
@@ -71,6 +77,7 @@ class Delegate(object):
                 if confirm == 'q':
                     return delegations
                 address = address_type(confirm)
+                self.print_prep_info(address)
                 maximum = voting_power + int(delegations.get(address, '0x0'), 16)
                 amount = self._check_value(input(f'Delegation amount (max: {maximum}): '), maximum)
                 delegations[address] = hex(amount)
@@ -83,6 +90,8 @@ class Delegate(object):
                 continue
             except ValueError as e:
                 print(e.__str__())
+                continue
+            except JSONRPCException:
                 continue
 
     @staticmethod
@@ -115,10 +124,19 @@ class Delegate(object):
         print('[Delegation]')
         print_response(address, result)
 
+    def print_prep_info(self, prep_addr):
+        print_response('P-Rep Info', self.get_prep(prep_addr))
+
 
 def run(args):
     icon_service = get_icon_service(args.endpoint)
     delegate = Delegate(icon_service)
+    if args.prep:
+        try:
+            delegate.print_prep_info(args.prep)
+        except JSONRPCException:
+            pass
+        exit(-1)
     if args.keystore:
         address = get_address_from_keystore(args.keystore)
     elif args.address:

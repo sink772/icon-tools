@@ -12,10 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import getpass
+
+from iconsdk.exception import KeyStoreException
 from iconsdk.wallet.wallet import KeyWallet
 
 from score import Score
-from util import TxHandler, print_response, get_icon_service
+from util import die, print_response, get_icon_service
 
 
 class Governance(Score):
@@ -73,18 +76,30 @@ class Governance(Score):
         else:
             return False
 
-    def send_accept_score(self, handler: TxHandler, tx_hash):
+    def accept_score(self, tx_hash):
+        if not self._owner:
+            die('Error: owner should be specified to invoke acceptScore')
         params = {
             "txHash": tx_hash
         }
-        return handler.invoke(self._owner, self.ADDRESS, "acceptScore", params)
+        return self._invoke(self._owner, "acceptScore", params)
 
 
-def run(endpoint: str):
-    icon_service = get_icon_service(endpoint)
-    owner_wallet = KeyWallet.load("./conf/keystore_test1", "test1_Account")
+def load_wallet(keystore):
+    try:
+        passwd = getpass.getpass()
+        return KeyWallet.load(keystore.name, passwd)
+    except KeyStoreException as e:
+        die(e.message)
 
-    gov = Governance(icon_service, owner_wallet)
+
+def run(args):
+    icon_service = get_icon_service(args.endpoint)
+    if args.keystore:
+        owner = load_wallet(args.keystore)
+    else:
+        owner = None
+    gov = Governance(icon_service, owner)
     gov.print_info()
     audit = gov.check_if_audit_enabled()
     if audit:

@@ -59,7 +59,7 @@ class Command(object):
 
     @staticmethod
     def gov(args):
-        gov.run(args.endpoint)
+        gov.run(args)
 
     @staticmethod
     def balance(args):

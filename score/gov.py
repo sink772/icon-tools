@@ -12,13 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import getpass
-
-from iconsdk.exception import KeyStoreException
-from iconsdk.wallet.wallet import KeyWallet
-
 from score import Score
-from util import die, print_response, get_icon_service
+from util import die, print_response, get_icon_service, load_keystore
 
 
 class Governance(Score):
@@ -85,18 +80,10 @@ class Governance(Score):
         return self._invoke(self._owner, "acceptScore", params)
 
 
-def load_wallet(keystore):
-    try:
-        passwd = getpass.getpass()
-        return KeyWallet.load(keystore.name, passwd)
-    except KeyStoreException as e:
-        die(e.message)
-
-
 def run(args):
     icon_service = get_icon_service(args.endpoint)
     if args.keystore:
-        owner = load_wallet(args.keystore)
+        owner = load_keystore(args.keystore)
     else:
         owner = None
     gov = Governance(icon_service, owner)

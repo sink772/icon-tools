@@ -12,13 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import getpass
-
-from iconsdk.exception import KeyStoreException
-from iconsdk.wallet.wallet import KeyWallet
-
 from score.chain import ChainScore
-from util import die, in_icx, print_response, get_icon_service, get_address_from_keystore
+from util import die, in_icx, print_response, get_icon_service, get_address_from_keystore, load_keystore
 
 
 class IScore(object):
@@ -35,13 +30,9 @@ class IScore(object):
     def claim(self, keystore):
         confirm = input('\n==> Are you sure you want to claim the IScore? (y/n) ')
         if confirm == 'y':
-            try:
-                passwd = getpass.getpass()
-                wallet = KeyWallet.load(keystore.name, passwd)
-                tx_hash = self._chain.invoke(wallet, "claimIScore")
-                print(f'\n==> Success: https://tracker.icon.foundation/transaction/{tx_hash}')
-            except KeyStoreException as e:
-                die(e.message)
+            wallet = load_keystore(keystore)
+            tx_hash = self._chain.invoke(wallet, "claimIScore")
+            print(f'\n==> Success: https://tracker.icon.foundation/transaction/{tx_hash}')
 
     def print_status(self, address):
         print('[IScore]')

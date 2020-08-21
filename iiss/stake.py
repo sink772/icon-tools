@@ -12,14 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import getpass
-
-from iconsdk.exception import KeyStoreException
-from iconsdk.wallet.wallet import KeyWallet
-
 from iiss.delegate import Delegate
 from score.chain import ChainScore
-from util import die, in_icx, in_loop, print_response, get_icon_service, get_address_from_keystore
+from util import die, in_icx, in_loop, print_response, get_icon_service, get_address_from_keystore, load_keystore
 
 
 class Stake(object):
@@ -58,13 +53,9 @@ class Stake(object):
             new_amount = self._check_value(input_value, int(total_icx))
             self._check_total_delegated(address, in_loop(new_amount))
             print('Requested amount =', new_amount, f'({in_loop(new_amount)} loop)')
-            try:
-                passwd = getpass.getpass()
-                wallet = KeyWallet.load(keystore.name, passwd)
-                tx_hash = self.set(wallet, new_amount)
-                print(f'\n==> Success: https://tracker.icon.foundation/transaction/{tx_hash}')
-            except KeyStoreException as e:
-                die(e.message)
+            wallet = load_keystore(keystore)
+            tx_hash = self.set(wallet, new_amount)
+            print(f'\n==> Success: https://tracker.icon.foundation/transaction/{tx_hash}')
 
     @staticmethod
     def print_status(address, result):

@@ -12,15 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import getpass
 import json
 import sys
 from time import sleep
 
 from iconsdk.builder.transaction_builder import DeployTransactionBuilder, CallTransactionBuilder
-from iconsdk.exception import JSONRPCException
+from iconsdk.exception import JSONRPCException, KeyStoreException
 from iconsdk.icon_service import IconService
 from iconsdk.providers.http_provider import HTTPProvider
 from iconsdk.signed_transaction import SignedTransaction
+from iconsdk.wallet.wallet import KeyWallet
 
 
 def die(message):
@@ -58,6 +60,14 @@ def get_address_from_keystore(keystore):
     with open(path, encoding='utf-8-sig') as f:
         keyfile: dict = json.load(f)
         return keyfile.get('address')
+
+
+def load_keystore(keystore):
+    try:
+        passwd = getpass.getpass()
+        return KeyWallet.load(keystore.name, passwd)
+    except KeyStoreException as e:
+        die(e.message)
 
 
 class TxHandler:

@@ -13,14 +13,12 @@
 # limitations under the License.
 
 import argparse
-import getpass
 
-from iconsdk.exception import KeyStoreException, JSONRPCException
-from iconsdk.wallet.wallet import KeyWallet
+from iconsdk.exception import JSONRPCException
 
 from run import address_type
 from score.chain import ChainScore
-from util import die, print_response, get_icon_service, get_address_from_keystore
+from util import die, print_response, get_icon_service, get_address_from_keystore, load_keystore
 
 
 class Delegate(object):
@@ -59,13 +57,9 @@ class Delegate(object):
         confirm = input('\n==> Are you sure you want to set new delegations? (y/n) ')
         if confirm == 'y':
             delegations = self._get_new_delegations(result)
-            try:
-                passwd = getpass.getpass()
-                wallet = KeyWallet.load(keystore.name, passwd)
-                tx_hash = self.set(wallet, delegations)
-                print(f'\n==> Success: https://tracker.icon.foundation/transaction/{tx_hash}')
-            except KeyStoreException as e:
-                die(e.message)
+            wallet = load_keystore(keystore)
+            tx_hash = self.set(wallet, delegations)
+            print(f'\n==> Success: https://tracker.icon.foundation/transaction/{tx_hash}')
 
     def _get_new_delegations(self, result):
         delegations = self._convert_to_map(result['delegations'])

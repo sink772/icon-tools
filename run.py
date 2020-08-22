@@ -46,6 +46,7 @@ class Command(object):
         stake_parser = subparsers.add_parser('stake', help='Query and set staking')
         stake_parser.add_argument('--address', type=address_type, help='target address to perform operations')
         stake_parser.add_argument('--set', action='store_true', help='set new staking amount')
+        stake_parser.add_argument('--auto', action='store_true', help='enable auto-staking')
 
         # create a parser for 'delegate' command
         delegate_parser = subparsers.add_parser('delegate', help='Query and set delegations')

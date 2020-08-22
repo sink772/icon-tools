@@ -9,7 +9,7 @@ A collection of CLI commands to perform the following actions.
 ## Usage
 
 ```bash
-$ ./run.py -h
+(.venv) $ ./run.py -h
 usage: run.py [-h] [-e ENDPOINT] [-k KEYSTORE] command ...
 
 optional arguments:
@@ -26,4 +26,13 @@ Available commands:
     iscore              Query and claim IScore
     stake               Query and set staking
     delegate            Query and set delegations
+```
+
+## Auto-staking
+
+You can perform the auto-staking operation (claim your IScore, set new stake amount, and set new delegations)
+without user intervention through the following command line.
+
+```bash
+(.venv) $ ./run.py -k <your_keystore> stake --set --auto
 ```

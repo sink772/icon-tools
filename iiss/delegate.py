@@ -62,9 +62,9 @@ class Delegate(object):
             print(f'\n==> Success: https://tracker.icon.foundation/transaction/{tx_hash}')
 
     def _get_new_delegations(self, result):
-        delegations = self._convert_to_map(result['delegations'])
+        delegations = self.convert_to_map(result['delegations'])
         voting_power = int(result['votingPower'], 16)
-        self._print_delegations(delegations, voting_power)
+        self.print_delegations(delegations, voting_power)
         while True:
             try:
                 confirm = input('\n==> The address you want to set (\'q\' for finish): ')
@@ -76,7 +76,7 @@ class Delegate(object):
                 amount = self._check_value(input(f'Delegation amount (max: {maximum}): '), maximum)
                 delegations[address] = hex(amount)
                 voting_power = maximum - amount
-                self._print_delegations(delegations, voting_power)
+                self.print_delegations(delegations, voting_power)
             except KeyboardInterrupt:
                 die('exit')
             except argparse.ArgumentTypeError:
@@ -89,7 +89,7 @@ class Delegate(object):
                 continue
 
     @staticmethod
-    def _convert_to_map(delegation_list):
+    def convert_to_map(delegation_list):
         delegations = {}
         for delegation in delegation_list:
             address = delegation["address"]
@@ -108,9 +108,9 @@ class Delegate(object):
             raise ValueError(f'Error: value should be integer')
 
     @staticmethod
-    def _print_delegations(delegations, voting_power):
+    def print_delegations(delegations, voting_power, header='delegations'):
         print()
-        print_response('delegations', delegations)
+        print_response(header, delegations)
         print('Remaining votingPower =', voting_power)
 
     @staticmethod

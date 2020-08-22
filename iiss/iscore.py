@@ -37,9 +37,10 @@ class IScore(object):
             tx_hash = self.claim(wallet)
             print(f'\n==> Success: https://tracker.icon.foundation/transaction/{tx_hash}')
 
-    def print_status(self, address):
+    def print_status(self, address, result=None):
         print('[IScore]')
-        result = self.query(address)
+        if result is None:
+            result = self.query(address)
         print_response(address, result)
         print('EstimatedICX =', in_icx(int(result['estimatedICX'], 16)))
 

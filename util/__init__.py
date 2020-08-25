@@ -62,9 +62,10 @@ def get_address_from_keystore(keystore):
         return keyfile.get('address')
 
 
-def load_keystore(keystore):
+def load_keystore(keystore, passwd=None):
     try:
-        passwd = getpass.getpass()
+        if passwd is None:
+            passwd = getpass.getpass()
         return KeyWallet.load(keystore.name, passwd)
     except KeyStoreException as e:
         die(e.message)

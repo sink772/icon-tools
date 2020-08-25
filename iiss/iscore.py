@@ -30,10 +30,10 @@ class IScore(object):
     def claim(self, wallet):
         return self._chain.invoke(wallet, "claimIScore")
 
-    def ask_to_claim(self, keystore):
+    def ask_to_claim(self, keystore, passwd):
         confirm = input('\n==> Are you sure you want to claim the IScore? (y/n) ')
         if confirm == 'y':
-            wallet = load_keystore(keystore)
+            wallet = load_keystore(keystore, passwd)
             tx_hash = self.claim(wallet)
             print(f'\n==> Success: https://tracker.icon.foundation/transaction/{tx_hash}')
 
@@ -58,4 +58,4 @@ def run(args):
     if args.claim:
         if not args.keystore:
             die('Error: keystore should be specified to claim')
-        iscore.ask_to_claim(args.keystore)
+        iscore.ask_to_claim(args.keystore, args.password)

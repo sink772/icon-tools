@@ -10,7 +10,7 @@ A collection of CLI commands to perform the following actions.
 
 ```bash
 (.venv) $ ./run.py -h
-usage: run.py [-h] [-e ENDPOINT] [-k KEYSTORE] command ...
+usage: run.py [-h] [-e ENDPOINT] [-k KEYSTORE] [-p PASSWORD] command ...
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -18,6 +18,8 @@ optional arguments:
                         an endpoint for connection
   -k KEYSTORE, --keystore KEYSTORE
                         keystore file for creating transactions
+  -p PASSWORD, --password PASSWORD
+                        password for the keystore file
 
 Available commands:
   command

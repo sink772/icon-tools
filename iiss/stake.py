@@ -62,10 +62,10 @@ class Stake(object):
         tx_hash = self.set(wallet, new_amount)
         self._ensure_tx_result(tx_hash, auto_staking)
 
-    def ask_to_set(self, address, current_stake, keystore):
+    def ask_to_set(self, address, current_stake, keystore, passwd):
         confirm = input('\n==> Are you sure you want to set new staking amount? (y/n) ')
         if confirm == 'y':
-            wallet = load_keystore(keystore)
+            wallet = load_keystore(keystore, passwd)
             self._check_and_set(wallet, address, current_stake, False)
 
     @staticmethod
@@ -142,8 +142,8 @@ class AutoStake(Stake):
         tx_hash = self._delegate.set(wallet, delegations)
         self._ensure_tx_result(tx_hash, True)
 
-    def run(self, address, current_stake, keystore):
-        wallet = load_keystore(keystore)
+    def run(self, address, current_stake, keystore, passwd):
+        wallet = load_keystore(keystore, passwd)
         self._claim_iscore(wallet, address)
         self._set_stake(wallet, address, current_stake)
         self._set_delegations(wallet, address)
@@ -165,8 +165,8 @@ def run(args):
         if not args.keystore:
             die('Error: keystore should be specified to set staking')
         if args.auto:
-            AutoStake(icon_service).run(address, current_stake, args.keystore)
+            AutoStake(icon_service).run(address, current_stake, args.keystore, args.password)
         else:
-            stake.ask_to_set(address, current_stake, args.keystore)
+            stake.ask_to_set(address, current_stake, args.keystore, args.password)
     elif args.auto:
         die('Error: "auto" option should be specified with "set"')

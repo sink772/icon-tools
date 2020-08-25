@@ -83,7 +83,7 @@ class Governance(Score):
 def run(args):
     icon_service = get_icon_service(args.endpoint)
     if args.keystore:
-        owner = load_keystore(args.keystore)
+        owner = load_keystore(args.keystore, args.password)
     else:
         owner = None
     gov = Governance(icon_service, owner)

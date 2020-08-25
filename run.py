@@ -25,6 +25,7 @@ class Command(object):
         parser.add_argument('-e', '--endpoint', type=str, default="mainnet", help='an endpoint for connection')
         parser.add_argument('-k', '--keystore', type=argparse.FileType('r'),
                             help='keystore file for creating transactions')
+        parser.add_argument('-p', '--password', type=str, help='password for the keystore file')
 
         subparsers = parser.add_subparsers(title='Available commands', metavar='command')
         subparsers.required = True

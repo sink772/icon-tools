@@ -53,11 +53,11 @@ class Delegate(object):
         result = self.query(address)
         return int(result['totalDelegated'], 16)
 
-    def ask_to_set(self, result, keystore):
+    def ask_to_set(self, result, keystore, passwd):
         confirm = input('\n==> Are you sure you want to set new delegations? (y/n) ')
         if confirm == 'y':
             delegations = self._get_new_delegations(result)
-            wallet = load_keystore(keystore)
+            wallet = load_keystore(keystore, passwd)
             tx_hash = self.set(wallet, delegations)
             print(f'\n==> Success: https://tracker.icon.foundation/transaction/{tx_hash}')
 
@@ -142,4 +142,4 @@ def run(args):
     if args.set:
         if not args.keystore:
             die('Error: keystore should be specified to set delegations')
-        delegate.ask_to_set(result, args.keystore)
+        delegate.ask_to_set(result, args.keystore, args.password)

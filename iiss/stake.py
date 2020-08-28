@@ -72,7 +72,7 @@ class Stake(object):
     def print_status(address, result):
         print('[Stake]')
         print_response(address, result)
-        print('StakedICX =', int(result['stake'], 16) / 10**18)
+        print('StakedICX =', in_icx(int(result['stake'], 16)))
 
     @staticmethod
     def _check_value(value: str, maximum: int):

@@ -18,7 +18,7 @@ from iconsdk.exception import JSONRPCException
 
 from run import address_type
 from score.chain import ChainScore
-from util import die, print_response, get_icon_service, get_address_from_keystore, load_keystore
+from util import die, in_icx, print_response, get_icon_service, get_address_from_keystore, load_keystore
 
 
 class Delegate(object):
@@ -117,6 +117,7 @@ class Delegate(object):
     def print_status(address, result):
         print('[Delegation]')
         print_response(address, result)
+        print('DelegatedICX =', in_icx(int(result['totalDelegated'], 16)))
 
     def print_prep_info(self, prep_addr):
         print_response('P-Rep Info', self.get_prep(prep_addr))

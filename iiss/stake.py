@@ -100,9 +100,14 @@ class Stake(object):
                 if count > 5:
                     die('Error: failed to get transaction result')
                 time.sleep(2)
-            else:
+            elif 'result' in result:
+                result = result['result']
                 print(f'Result: {json.dumps(result, indent=4)}')
+                if result['status'] != '0x1':
+                    die('Error: transaction failed')
                 break
+            else:
+                die(f'Error: unknown response: {json.dumps(result, indent=4)}')
 
 
 class AutoStake(Stake):

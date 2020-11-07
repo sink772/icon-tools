@@ -37,6 +37,7 @@ class Command(object):
         # create a parser for 'balance' command
         balance_parser = subparsers.add_parser('balance', help='Get ICX balance of given address')
         balance_parser.add_argument('--address', type=address_type, help='target address to perform operations')
+        balance_parser.add_argument('--all', action='store_true', help='include the staked ICX')
 
         # create a parser for 'iscore' command
         iscore_parser = subparsers.add_parser('iscore', help='Query and claim IScore')

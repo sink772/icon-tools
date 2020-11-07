@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from iiss.stake import Stake
 from util import die, in_icx, get_icon_service, get_address_from_keystore
 
 
@@ -24,4 +25,9 @@ def balance(args):
     else:
         die('Error: keystore or address should be specified')
     _balance = icon_service.get_balance(address)
-    print('ICX =', in_icx(_balance))
+    print('ICX (avail) =', in_icx(_balance))
+    if args.all:
+        result = Stake(icon_service).query(address)
+        current_stake = int(result['stake'], 16)
+        print('ICX (stake) =', in_icx(current_stake))
+        print('Total ICX =', in_icx(_balance + current_stake))

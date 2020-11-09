@@ -86,7 +86,7 @@ class Stake(object):
 
     def _check_total_delegated(self, address, amount):
         total_delegated = self._delegate.get_total_delegated(address)
-        if amount <= total_delegated:
+        if amount < total_delegated:
             die(f'Error: amount ({amount}) should be larger than the current total delegated ({total_delegated})')
 
     def _ensure_tx_result(self, tx_hash, wait_result):

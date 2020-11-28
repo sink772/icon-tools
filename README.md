@@ -2,6 +2,7 @@
 
 A collection of CLI commands to perform the following actions.
   * Check governance status of given network
+  * Query and transfer your ICX
   * Query and claim your IScore
   * Query and set staking
   * Query and set delegations
@@ -25,6 +26,7 @@ Available commands:
   command
     gov                 Check governance status
     balance             Get ICX balance of given address
+    transfer            Transfer ICX to the given address
     iscore              Query and claim IScore
     stake               Query and set staking
     delegate            Query and set delegations

@@ -17,7 +17,7 @@ import json
 import sys
 from time import sleep
 
-from iconsdk.builder.transaction_builder import DeployTransactionBuilder, CallTransactionBuilder
+from iconsdk.builder.transaction_builder import DeployTransactionBuilder, CallTransactionBuilder, TransactionBuilder
 from iconsdk.exception import JSONRPCException, KeyStoreException
 from iconsdk.icon_service import IconService
 from iconsdk.providers.http_provider import HTTPProvider
@@ -47,6 +47,7 @@ def get_icon_service(endpoint):
         "mainnet": 'https://ctz.solidwallet.io',
         "testnet": 'https://test-ctz.solidwallet.io',
         "bicon": 'https://bicon.net.solidwallet.io',
+        "gangnam": 'https://gicon.net.solidwallet.io',
         "local": 'http://localhost:9000',
     }
     url = endpoint_map.get(endpoint, endpoint)
@@ -96,6 +97,14 @@ class TxHandler:
     def update(self, wallet, to, content, params=None, limit=0x70000000):
         return self._deploy(wallet, to, content, params, limit)
 
+    def _send_transaction(self, transaction, wallet, limit):
+        if limit is not None:
+            signed_tx = SignedTransaction(transaction, wallet, limit)
+        else:
+            estimated_step = self._icon_service.estimate_step(transaction)
+            signed_tx = SignedTransaction(transaction, wallet, estimated_step)
+        return self._icon_service.send_transaction(signed_tx)
+
     def invoke(self, wallet, to, method, params, nid=1, limit=None):
         transaction = CallTransactionBuilder() \
             .from_(wallet.get_address()) \
@@ -104,12 +113,16 @@ class TxHandler:
             .method(method) \
             .params(params) \
             .build()
-        if limit is not None:
-            signed_tx = SignedTransaction(transaction, wallet, limit)
-        else:
-            estimated_step = self._icon_service.estimate_step(transaction)
-            signed_tx = SignedTransaction(transaction, wallet, estimated_step)
-        return self._icon_service.send_transaction(signed_tx)
+        return self._send_transaction(transaction, wallet, limit)
+
+    def transfer(self, wallet, to, amount, nid=1, limit=None):
+        transaction = TransactionBuilder() \
+            .from_(wallet.get_address()) \
+            .to(to) \
+            .value(amount) \
+            .nid(nid) \
+            .build()
+        return self._send_transaction(transaction, wallet, limit)
 
     def get_tx_result(self, tx_hash):
         while True:

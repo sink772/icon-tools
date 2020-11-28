@@ -39,6 +39,11 @@ class Command(object):
         balance_parser.add_argument('--address', type=address_type, help='target address to perform operations')
         balance_parser.add_argument('--all', action='store_true', help='include the staked ICX')
 
+        # create a parser for 'transfer' command
+        balance_parser = subparsers.add_parser('transfer', help='Transfer ICX to the given address')
+        balance_parser.add_argument('--to', type=address_type, required=True, help='the recipient address')
+        balance_parser.add_argument('--amount', type=int, help='the amount of ICX (in loop)')
+
         # create a parser for 'iscore' command
         iscore_parser = subparsers.add_parser('iscore', help='Query and claim IScore')
         iscore_parser.add_argument('--address', type=address_type, help='target address to perform operations')
@@ -66,7 +71,11 @@ class Command(object):
 
     @staticmethod
     def balance(args):
-        icx.balance(args)
+        icx.run('balance', args)
+
+    @staticmethod
+    def transfer(args):
+        icx.run('transfer', args)
 
     @staticmethod
     def iscore(args):

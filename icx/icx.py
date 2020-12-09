@@ -23,12 +23,15 @@ class ICX(object):
 
     def balance(self, address, is_all):
         _balance = self._icon_service.get_balance(address)
-        print('ICX (avail) =', in_icx(_balance))
+        status = {
+            'ICX (avail)': in_icx(_balance)
+        }
         if is_all:
             result = Stake(self._icon_service).query(address)
             current_stake = int(result['stake'], 16)
-            print('ICX (stake) =', in_icx(current_stake))
-            print('Total ICX =', in_icx(_balance + current_stake))
+            status['ICX (stake)'] = in_icx(current_stake)
+            status['Total ICX  '] = in_icx(_balance + current_stake)
+        print_response(address, status)
         return _balance
 
     def transfer(self, address, args):
@@ -46,7 +49,7 @@ class ICX(object):
             wallet = load_keystore(args.keystore, args.password)
             _tx_handler = TxHandler(self._icon_service)
             tx_hash = _tx_handler.transfer(wallet, args.to, _amount)
-            print_response("Hash", tx_hash)
+            print(f'\n==> Success: https://tracker.icon.foundation/transaction/{tx_hash}')
 
     @staticmethod
     def ensure_amount(amount, maximum):

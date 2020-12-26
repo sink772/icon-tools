@@ -38,7 +38,7 @@ class IScore(object):
             print(f'\n==> Success: https://tracker.icon.foundation/transaction/{tx_hash}')
 
     def print_status(self, address, result=None):
-        print('[IScore]')
+        print('\n[IScore]')
         if result is None:
             result = self.query(address)
         print_response(address, result)

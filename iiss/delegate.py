@@ -115,7 +115,7 @@ class Delegate(object):
 
     @staticmethod
     def print_status(address, result):
-        print('[Delegation]')
+        print('\n[Delegation]')
         print_response(address, result)
         print('DelegatedICX =', in_icx(int(result['totalDelegated'], 16)))
 

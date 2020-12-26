@@ -52,7 +52,7 @@ def get_icon_service(endpoint):
     }
     url = endpoint_map.get(endpoint, endpoint)
     print('[Endpoint]')
-    print(f"{endpoint}: {url}/api/v3\n")
+    print(f"{endpoint}: {url}/api/v3")
     return IconService(HTTPProvider(url, 3))
 
 
@@ -115,7 +115,7 @@ class TxHandler:
             .build()
         return self._send_transaction(transaction, wallet, limit)
 
-    def transfer(self, wallet, to, amount, nid=1, limit=None):
+    def transfer(self, wallet, to, amount, nid=1, limit=100000):
         transaction = TransactionBuilder() \
             .from_(wallet.get_address()) \
             .to(to) \

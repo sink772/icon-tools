@@ -70,7 +70,7 @@ class Stake(object):
 
     @staticmethod
     def print_status(address, result):
-        print('[Stake]')
+        print('\n[Stake]')
         print_response(address, result)
         print('StakedICX =', in_icx(int(result['stake'], 16)))
 
@@ -114,16 +114,23 @@ class AutoStake(Stake):
 
     def __init__(self, service):
         super().__init__(service)
+        self._iscore = IScore(service)
 
-    def _claim_iscore(self, wallet, address):
-        print('\n>>> Claim IScore:')
-        iscore = IScore(self._icon_service)
-        result = iscore.query(address)
-        iscore.print_status(address, result)
-        estimated_icx = in_icx(int(result['estimatedICX'], 16))
-        if (estimated_icx - 1.0) <= 0:
+    def _show_status(self, address, current_stake):
+        result = self._iscore.query(address)
+        self._iscore.print_status(address, result)
+        estimated_icx = int(result['estimatedICX'], 16)
+        if (in_icx(estimated_icx) - 1.0) <= 0:
             die('Error: EstimatedICX should be larger than 1.0')
-        tx_hash = iscore.claim(wallet)
+        balance = self.balance(address)
+        total_icx = in_icx(current_stake + balance + estimated_icx)
+        new_amount = int(total_icx - 1.0)  # leave 1.0 ICX for future transactions
+        print('\nCurrent balance =', in_icx(balance))
+        print('Expected stake amount after auto-staking =', float(new_amount))
+
+    def _claim_iscore(self, wallet):
+        print('\n>>> Claim IScore:')
+        tx_hash = self._iscore.claim(wallet)
         self._ensure_tx_result(tx_hash, True)
 
     def _set_stake(self, wallet, address, current_stake):
@@ -147,9 +154,18 @@ class AutoStake(Stake):
         tx_hash = self._delegate.set(wallet, delegations)
         self._ensure_tx_result(tx_hash, True)
 
+    @staticmethod
+    def _ask_to_continue(keystore, passwd):
+        if passwd is None:
+            confirm = input('\n==> Are you sure you want to continue? (y/n) ')
+            if confirm != 'y':
+                die('Exit')
+        return load_keystore(keystore, passwd)
+
     def run(self, address, current_stake, keystore, passwd):
-        wallet = load_keystore(keystore, passwd)
-        self._claim_iscore(wallet, address)
+        self._show_status(address, current_stake)
+        wallet = self._ask_to_continue(keystore, passwd)
+        self._claim_iscore(wallet)
         self._set_stake(wallet, address, current_stake)
         self._set_delegations(wallet, address)
 

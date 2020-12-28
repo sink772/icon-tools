@@ -43,7 +43,18 @@ class Stake(object):
         }
         return self._chain.invoke(wallet, "setStake", params)
 
-    def _check_and_set(self, wallet, address, current_stake, auto_staking):
+    def _get_input(self, total_icx):
+        while True:
+            try:
+                input_value = input('\n==> New staking amount (in ICX)? ')
+                return self._check_value(input_value, int(total_icx))
+            except KeyboardInterrupt:
+                die('exit')
+            except ValueError as e:
+                print('Error:', e.__str__())
+                continue
+
+    def _get_new_amount(self, address, current_stake, auto_staking):
         balance = self.balance(address)
         status = {
             'staked': in_icx(current_stake),
@@ -55,18 +66,18 @@ class Stake(object):
         if auto_staking:
             new_amount = int(total_icx - 1.0)  # leave 1.0 ICX for future transactions
         else:
-            input_value = input('\n==> New staking amount (in ICX)? ')
-            new_amount = self._check_value(input_value, int(total_icx))
+            new_amount = self._get_input(total_icx)
         self._check_total_delegated(address, in_loop(new_amount))
         print('Requested amount =', new_amount, f'({in_loop(new_amount)} loop)')
-        tx_hash = self.set(wallet, new_amount)
-        self._ensure_tx_result(tx_hash, auto_staking)
+        return new_amount
 
     def ask_to_set(self, address, current_stake, keystore, passwd):
         confirm = input('\n==> Are you sure you want to set new staking amount? (y/n) ')
         if confirm == 'y':
+            new_amount = self._get_new_amount(address, current_stake, False)
             wallet = load_keystore(keystore, passwd)
-            self._check_and_set(wallet, address, current_stake, False)
+            tx_hash = self.set(wallet, new_amount)
+            self._ensure_tx_result(tx_hash, False)
 
     @staticmethod
     def print_status(address, result):
@@ -76,13 +87,10 @@ class Stake(object):
 
     @staticmethod
     def _check_value(value: str, maximum: int):
-        try:
-            amount = int(value)
-            if 0 <= amount <= maximum:
-                return amount
-            die(f'Error: value should be 0 <= (value) <= {maximum}')
-        except ValueError:
-            die(f'Error: value should be integer')
+        amount = int(value)
+        if 0 <= amount <= maximum:
+            return amount
+        raise ValueError(f'value should be 0 <= (value) <= {maximum}')
 
     def _check_total_delegated(self, address, amount):
         total_delegated = self._delegate.get_total_delegated(address)
@@ -135,7 +143,9 @@ class AutoStake(Stake):
 
     def _set_stake(self, wallet, address, current_stake):
         print('\n>>> Set staking:')
-        self._check_and_set(wallet, address, current_stake, True)
+        new_amount = self._get_new_amount(address, current_stake, True)
+        tx_hash = self.set(wallet, new_amount)
+        self._ensure_tx_result(tx_hash, True)
 
     def _set_delegations(self, wallet, address):
         print('\n>>> Set delegations:')

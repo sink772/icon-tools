@@ -63,7 +63,7 @@ class ICX(object):
         details = {
             "recipient": address,
             "amount": f"{amount} ({in_icx(amount)} ICX)",
-            "expected balance after transfer": f"{in_icx(current_balance - amount)} ICX"
+            "estimated balance after transfer": f"{in_icx(current_balance - amount)} ICX"
         }
         print()
         print_response('Details', details)

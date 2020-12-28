@@ -126,7 +126,7 @@ class AutoStake(Stake):
         total_icx = in_icx(current_stake + balance + estimated_icx)
         new_amount = int(total_icx - 1.0)  # leave 1.0 ICX for future transactions
         print('\nCurrent balance =', in_icx(balance))
-        print('Expected stake amount after auto-staking =', float(new_amount))
+        print('Estimated stake amount after auto-staking =', float(new_amount))
 
     def _claim_iscore(self, wallet):
         print('\n>>> Claim IScore:')

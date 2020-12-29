@@ -67,14 +67,31 @@ class Delegate(object):
         self.print_delegations(delegations, voting_power)
         while True:
             try:
-                confirm = input('\n==> The address you want to set (\'q\' for finish): ')
-                if confirm == 'q':
-                    return delegations
+                confirm = input('\n==> The address you want to set (or [s,l,q,?]): ')
+                if len(confirm) == 1:
+                    if confirm == 's':
+                        return delegations
+                    elif confirm == 'l':
+                        self.print_delegations(delegations, voting_power)
+                        continue
+                    elif confirm == 'q':
+                        die('exit')
+                    elif confirm == '?':
+                        print('s - set new delegations')
+                        print('l - list current delegations')
+                        print('q - quit')
+                        print('? - show this help messages')
+                        continue
+                    else:
+                        raise ValueError(f'Error: invalid input: {confirm}')
                 address = address_type(confirm)
                 self.print_prep_info(address)
                 maximum = voting_power + int(delegations.get(address, '0x0'), 16)
                 amount = self._check_value(input(f'Delegation amount (max: {maximum}): '), maximum)
-                delegations[address] = hex(amount)
+                if amount == 0:
+                    del delegations[address]
+                else:
+                    delegations[address] = hex(amount)
                 voting_power = maximum - amount
                 self.print_delegations(delegations, voting_power)
             except KeyboardInterrupt:

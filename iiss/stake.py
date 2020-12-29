@@ -12,13 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import json
-import time
-
 from iiss.delegate import Delegate
 from iiss.iscore import IScore
 from score.chain import ChainScore
-from util import die, in_icx, in_loop, print_response, get_icon_service, get_address_from_keystore, load_keystore
+from util import die, in_icx, in_loop, print_response, get_icon_service, get_address_from_keystore, load_keystore, \
+    ensure_tx_result
 
 
 class Stake(object):
@@ -77,7 +75,7 @@ class Stake(object):
             new_amount = self._get_new_amount(address, current_stake, False)
             wallet = load_keystore(keystore, passwd)
             tx_hash = self.set(wallet, new_amount)
-            self._ensure_tx_result(tx_hash, False)
+            ensure_tx_result(self._icon_service, tx_hash, False)
 
     @staticmethod
     def print_status(address, result):
@@ -96,26 +94,6 @@ class Stake(object):
         total_delegated = self._delegate.get_total_delegated(address)
         if amount < total_delegated:
             die(f'Error: amount ({amount}) should be larger than the current total delegated ({total_delegated})')
-
-    def _ensure_tx_result(self, tx_hash, wait_result):
-        print(f'\n==> https://tracker.icon.foundation/transaction/{tx_hash}')
-        count = 0
-        while wait_result:
-            result = self._icon_service.get_transaction_result(tx_hash, True)
-            if 'error' in result:
-                print(f'Retry: {result["error"]}')
-                count += 1
-                if count > 5:
-                    die('Error: failed to get transaction result')
-                time.sleep(2)
-            elif 'result' in result:
-                result = result['result']
-                print(f'Result: {json.dumps(result, indent=4)}')
-                if result['status'] != '0x1':
-                    die('Error: transaction failed')
-                break
-            else:
-                die(f'Error: unknown response: {json.dumps(result, indent=4)}')
 
 
 class AutoStake(Stake):
@@ -139,13 +117,13 @@ class AutoStake(Stake):
     def _claim_iscore(self, wallet):
         print('\n>>> Claim IScore:')
         tx_hash = self._iscore.claim(wallet)
-        self._ensure_tx_result(tx_hash, True)
+        ensure_tx_result(self._icon_service, tx_hash, True)
 
     def _set_stake(self, wallet, address, current_stake):
         print('\n>>> Set staking:')
         new_amount = self._get_new_amount(address, current_stake, True)
         tx_hash = self.set(wallet, new_amount)
-        self._ensure_tx_result(tx_hash, True)
+        ensure_tx_result(self._icon_service, tx_hash, True)
 
     def _set_delegations(self, wallet, address):
         print('\n>>> Set delegations:')
@@ -162,7 +140,7 @@ class AutoStake(Stake):
         else:
             die('Error: no delegation or no voting power available')
         tx_hash = self._delegate.set(wallet, delegations)
-        self._ensure_tx_result(tx_hash, True)
+        ensure_tx_result(self._icon_service, tx_hash, True)
 
     @staticmethod
     def _ask_to_continue(keystore, passwd):

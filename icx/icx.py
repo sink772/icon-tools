@@ -13,7 +13,8 @@
 # limitations under the License.
 
 from iiss.stake import Stake
-from util import die, in_icx, get_icon_service, get_address_from_keystore, print_response, load_keystore, TxHandler
+from util import die, in_icx, get_icon_service, get_address_from_keystore, print_response, load_keystore, \
+    TxHandler, ensure_tx_result
 
 
 class ICX(object):
@@ -50,7 +51,7 @@ class ICX(object):
             wallet = load_keystore(args.keystore, args.password)
             _tx_handler = TxHandler(self._icon_service)
             tx_hash = _tx_handler.transfer(wallet, args.to, _amount)
-            print(f'\n==> Success: https://tracker.icon.foundation/transaction/{tx_hash}')
+            ensure_tx_result(self._icon_service, tx_hash, False)
 
     @staticmethod
     def ensure_amount(amount, maximum):

@@ -72,6 +72,27 @@ def load_keystore(keystore, passwd=None):
         die(e.message)
 
 
+def ensure_tx_result(icon_service, tx_hash, wait_result):
+    print(f'\n==> https://tracker.icon.foundation/transaction/{tx_hash}')
+    count = 0
+    while wait_result:
+        result = icon_service.get_transaction_result(tx_hash, True)
+        if 'error' in result:
+            print(f'Retry: {result["error"]}')
+            count += 1
+            if count > 5:
+                die('Error: failed to get transaction result')
+            sleep(2)
+        elif 'result' in result:
+            result = result['result']
+            print(f'Result: {json.dumps(result, indent=4)}')
+            if result['status'] != '0x1':
+                die('Error: transaction failed')
+            break
+        else:
+            die(f'Error: unknown response: {json.dumps(result, indent=4)}')
+
+
 class TxHandler:
     ZERO_ADDRESS = "cx0000000000000000000000000000000000000000"
 

@@ -13,13 +13,15 @@
 # limitations under the License.
 
 from score.chain import ChainScore
-from util import die, in_icx, print_response, get_icon_service, get_address_from_keystore, load_keystore
+from util import die, in_icx, print_response, get_icon_service, get_address_from_keystore, load_keystore, \
+    ensure_tx_result
 
 
 class IScore(object):
 
     def __init__(self, service):
         self._chain = ChainScore(service)
+        self._icon_service = service
 
     def query(self, address):
         params = {
@@ -35,7 +37,7 @@ class IScore(object):
         if confirm == 'y':
             wallet = load_keystore(keystore, passwd)
             tx_hash = self.claim(wallet)
-            print(f'\n==> Success: https://tracker.icon.foundation/transaction/{tx_hash}')
+            ensure_tx_result(self._icon_service, tx_hash, False)
 
     def print_status(self, address, result=None):
         print('\n[IScore]')

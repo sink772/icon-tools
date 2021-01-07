@@ -13,6 +13,7 @@
 # limitations under the License.
 
 from iiss.stake import Stake
+from score.gov import Governance
 from util import die, in_icx, get_icon_service, get_address_from_keystore, print_response, load_keystore, \
     TxHandler, ensure_tx_result
 
@@ -23,48 +24,59 @@ class ICX(object):
         self._icon_service = service
 
     def balance(self, address, is_all):
-        _balance = self._icon_service.get_balance(address)
+        balance = self._icon_service.get_balance(address)
         status = {
-            'ICX (avail)': in_icx(_balance)
+            'ICX (avail)': in_icx(balance)
         }
         if is_all:
             result = Stake(self._icon_service).query(address)
             current_stake = int(result['stake'], 16)
             status['ICX (stake)'] = in_icx(current_stake)
-            status['Total ICX  '] = in_icx(_balance + current_stake)
+            status['Total ICX  '] = in_icx(balance + current_stake)
         print('\n[Balance]')
         print_response(address, status)
-        return _balance
+        return balance
 
     def transfer(self, address, args):
-        _balance = self.balance(address, False)
+        balance = self.balance(address, False)
+        tx_fee = self.get_default_tx_fee()
+        maximum = balance - tx_fee
         if args.amount:
-            _amount = args.amount
+            amount = args.amount
         else:
-            value = input('\n==> Amount of transfer (in loop)? ')
+            value = input('\n==> Amount of transfer in loop (or [a]ll): ')
             try:
-                _amount = int(value)
+                if len(value) == 1 and value == 'a':
+                    amount = maximum
+                else:
+                    amount = int(value)
             except ValueError:
                 die(f'Error: value should be integer')
-        self.ensure_amount(_amount, _balance)
-        if self.ask_to_confirm(args.to, _balance, _amount):
+        self.ensure_amount(amount, maximum)
+        if self.ask_to_confirm(args.to, balance, amount, tx_fee):
             wallet = load_keystore(args.keystore, args.password)
-            _tx_handler = TxHandler(self._icon_service)
-            tx_hash = _tx_handler.transfer(wallet, args.to, _amount)
+            tx_handler = TxHandler(self._icon_service)
+            tx_hash = tx_handler.transfer(wallet, args.to, amount)
             ensure_tx_result(self._icon_service, tx_hash, False)
+
+    def get_default_tx_fee(self):
+        gov = Governance(self._icon_service, None)
+        step_price = int(gov.get_step_price(), 16)
+        default_step = 100_000
+        return step_price * default_step
 
     @staticmethod
     def ensure_amount(amount, maximum):
-        if 0 < amount < maximum:
+        if 0 < amount <= maximum:
             return amount
-        die(f'Error: value should be 0 < (value) < {maximum}')
+        die(f'Error: value should be 0 < (value) <= {maximum}')
 
     @staticmethod
-    def ask_to_confirm(address, current_balance, amount):
+    def ask_to_confirm(address, balance, amount, tx_fee):
         details = {
             "recipient": address,
             "amount": f"{amount} ({in_icx(amount)} ICX)",
-            "estimated balance after transfer": f"{in_icx(current_balance - amount)} ICX"
+            "estimated balance after transfer": f"{in_icx(balance - amount - tx_fee)} ICX"
         }
         print()
         print_response('Details', details)

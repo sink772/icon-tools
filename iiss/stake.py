@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from time import sleep
+
 from iiss.delegate import Delegate
 from iiss.iscore import IScore
 from score.chain import ChainScore
@@ -127,20 +129,29 @@ class AutoStake(Stake):
 
     def _set_delegations(self, wallet, address):
         print('\n>>> Set delegations:')
-        result = self._delegate.query(address)
-        delegations = self._delegate.convert_to_map(result['delegations'])
-        voting_power = int(result['votingPower'], 16)
-        self._delegate.print_delegations(delegations, voting_power, header='Current delegations')
-        if len(delegations) > 0 and voting_power > 0:
-            # add the remaining voting power to the first
-            first = next(iter(delegations))
-            amount = voting_power + int(delegations.get(first), 16)
-            delegations[first] = hex(amount)
-            self._delegate.print_delegations(delegations, 0, header='New delegations')
-        else:
-            die('Error: no delegation or no voting power available')
-        tx_hash = self._delegate.set(wallet, delegations)
-        ensure_tx_result(self._icon_service, tx_hash, True)
+        retry_count = 3
+        while True:
+            result = self._delegate.query(address)
+            delegations = self._delegate.convert_to_map(result['delegations'])
+            voting_power = int(result['votingPower'], 16)
+            self._delegate.print_delegations(delegations, voting_power, header='Current delegations')
+            if len(delegations) > 0 and voting_power > 0:
+                # add the remaining voting power to the first
+                first = next(iter(delegations))
+                amount = voting_power + int(delegations.get(first), 16)
+                delegations[first] = hex(amount)
+                self._delegate.print_delegations(delegations, 0, header='New delegations')
+                tx_hash = self._delegate.set(wallet, delegations)
+                ensure_tx_result(self._icon_service, tx_hash, True)
+                return
+            else:
+                print('Warning: no delegation or no voting power available')
+                retry_count -= 1
+                if retry_count > 0:
+                    print('Retry after 3 seconds...')
+                    sleep(3)
+                else:
+                    die('Exit')
 
     @staticmethod
     def _ask_to_continue(keystore, passwd):

@@ -17,19 +17,16 @@ from time import sleep
 from iiss.delegate import Delegate
 from iiss.iscore import IScore
 from score.chain import ChainScore
-from util import die, in_icx, in_loop, print_response, get_icon_service, get_address_from_keystore, load_keystore, \
-    ensure_tx_result
+from util import die, in_icx, in_loop, print_response, get_icon_service, get_address_from_keystore, load_keystore
+from util.txhandler import TxHandler
 
 
 class Stake(object):
 
-    def __init__(self, service):
-        self._chain = ChainScore(service)
-        self._icon_service = service
-        self._delegate = Delegate(service)
-
-    def balance(self, address):
-        return self._icon_service.get_balance(address)
+    def __init__(self, tx_handler):
+        self._tx_handler = tx_handler
+        self._chain = ChainScore(tx_handler)
+        self._delegate = Delegate(tx_handler)
 
     def query(self, address):
         params = {
@@ -55,13 +52,14 @@ class Stake(object):
                 continue
 
     def _get_new_amount(self, address, current_stake, auto_staking):
-        balance = self.balance(address)
+        balance = self._tx_handler.get_balance(address)
         status = {
             'staked': in_icx(current_stake),
             'unstaked': in_icx(balance),
         }
-        total_icx = in_icx(current_stake + balance)
+        print()
         print_response('Balance (in ICX)', status)
+        total_icx = in_icx(current_stake + balance)
         print('Total ICX balance =', total_icx)
         if auto_staking:
             new_amount = int(total_icx - 1.0)  # leave 1.0 ICX for future transactions
@@ -77,7 +75,7 @@ class Stake(object):
             new_amount = self._get_new_amount(address, current_stake, False)
             wallet = load_keystore(keystore, passwd)
             tx_hash = self.set(wallet, new_amount)
-            ensure_tx_result(self._icon_service, tx_hash, False)
+            self._tx_handler.ensure_tx_result(tx_hash, True)
 
     @staticmethod
     def print_status(address, result):
@@ -100,9 +98,9 @@ class Stake(object):
 
 class AutoStake(Stake):
 
-    def __init__(self, service):
-        super().__init__(service)
-        self._iscore = IScore(service)
+    def __init__(self, tx_handler):
+        super().__init__(tx_handler)
+        self._iscore = IScore(tx_handler)
 
     def _show_status(self, address, current_stake):
         result = self._iscore.query(address)
@@ -110,7 +108,7 @@ class AutoStake(Stake):
         estimated_icx = int(result['estimatedICX'], 16)
         if (in_icx(estimated_icx) - 1.0) <= 0:
             die('Error: EstimatedICX should be larger than 1.0')
-        balance = self.balance(address)
+        balance = self._tx_handler.get_balance(address)
         total_icx = in_icx(current_stake + balance + estimated_icx)
         new_amount = int(total_icx - 1.0)  # leave 1.0 ICX for future transactions
         print('\nCurrent balance =', in_icx(balance))
@@ -119,13 +117,13 @@ class AutoStake(Stake):
     def _claim_iscore(self, wallet):
         print('\n>>> Claim IScore:')
         tx_hash = self._iscore.claim(wallet)
-        ensure_tx_result(self._icon_service, tx_hash, True)
+        self._tx_handler.ensure_tx_result(tx_hash, True)
 
     def _set_stake(self, wallet, address, current_stake):
         print('\n>>> Set staking:')
         new_amount = self._get_new_amount(address, current_stake, True)
         tx_hash = self.set(wallet, new_amount)
-        ensure_tx_result(self._icon_service, tx_hash, True)
+        self._tx_handler.ensure_tx_result(tx_hash, True)
 
     def _set_delegations(self, wallet, address):
         print('\n>>> Set delegations:')
@@ -142,7 +140,7 @@ class AutoStake(Stake):
                 delegations[first] = hex(amount)
                 self._delegate.print_delegations(delegations, 0, header='New delegations')
                 tx_hash = self._delegate.set(wallet, delegations)
-                ensure_tx_result(self._icon_service, tx_hash, True)
+                self._tx_handler.ensure_tx_result(tx_hash, True)
                 return
             else:
                 print('Warning: no delegation or no voting power available')
@@ -170,8 +168,9 @@ class AutoStake(Stake):
 
 
 def run(args):
-    icon_service = get_icon_service(args.endpoint)
-    stake = Stake(icon_service)
+    icon_service, nid = get_icon_service(args.endpoint)
+    tx_handler = TxHandler(icon_service, nid)
+    stake = Stake(tx_handler)
     if args.keystore:
         address = get_address_from_keystore(args.keystore)
     elif args.address:
@@ -185,7 +184,7 @@ def run(args):
         if not args.keystore:
             die('Error: keystore should be specified to set staking')
         if args.auto:
-            AutoStake(icon_service).run(address, current_stake, args.keystore, args.password)
+            AutoStake(tx_handler).run(address, current_stake, args.keystore, args.password)
         else:
             stake.ask_to_set(address, current_stake, args.keystore, args.password)
     elif args.auto:

@@ -13,15 +13,15 @@
 # limitations under the License.
 
 from score.chain import ChainScore
-from util import die, in_icx, print_response, get_icon_service, get_address_from_keystore, load_keystore, \
-    ensure_tx_result
+from util import die, in_icx, print_response, get_icon_service, get_address_from_keystore, load_keystore
+from util.txhandler import TxHandler
 
 
 class IScore(object):
 
-    def __init__(self, service):
-        self._chain = ChainScore(service)
-        self._icon_service = service
+    def __init__(self, tx_handler):
+        self._tx_handler = tx_handler
+        self._chain = ChainScore(tx_handler)
 
     def query(self, address):
         params = {
@@ -37,7 +37,7 @@ class IScore(object):
         if confirm == 'y':
             wallet = load_keystore(keystore, passwd)
             tx_hash = self.claim(wallet)
-            ensure_tx_result(self._icon_service, tx_hash, False)
+            self._tx_handler.ensure_tx_result(tx_hash, True)
 
     def print_status(self, address, result=None):
         print('\n[IScore]')
@@ -48,8 +48,9 @@ class IScore(object):
 
 
 def run(args):
-    icon_service = get_icon_service(args.endpoint)
-    iscore = IScore(icon_service)
+    icon_service, nid = get_icon_service(args.endpoint)
+    tx_handler = TxHandler(icon_service, nid)
+    iscore = IScore(tx_handler)
     if args.keystore:
         address = get_address_from_keystore(args.keystore)
     elif args.address:

@@ -15,13 +15,10 @@
 import getpass
 import json
 import sys
-from time import sleep
 
-from iconsdk.builder.transaction_builder import DeployTransactionBuilder, CallTransactionBuilder, TransactionBuilder
-from iconsdk.exception import JSONRPCException, KeyStoreException
+from iconsdk.exception import KeyStoreException
 from iconsdk.icon_service import IconService
 from iconsdk.providers.http_provider import HTTPProvider
-from iconsdk.signed_transaction import SignedTransaction
 from iconsdk.wallet.wallet import KeyWallet
 
 
@@ -44,16 +41,17 @@ def print_response(header, msg):
 
 def get_icon_service(endpoint):
     endpoint_map = {
-        "mainnet": 'https://ctz.solidwallet.io',
-        "testnet": 'https://test-ctz.solidwallet.io',
-        "bicon": 'https://bicon.net.solidwallet.io',
-        "gangnam": 'https://gicon.net.solidwallet.io',
-        "local": 'http://localhost:9000',
+        "mainnet": ['https://ctz.solidwallet.io', 0x1],
+        "testnet": ['https://test-ctz.solidwallet.io', 0x2],
+        "bicon":   ['https://bicon.net.solidwallet.io', 0x3],
+        "gangnam": ['https://gicon.net.solidwallet.io', 0x7],
+        "gochain": ['http://localhost:9082', 0x3],
+        "local":   ['http://localhost:9000', 0x3],
     }
-    url = endpoint_map.get(endpoint, endpoint)
+    url, nid = endpoint_map.get(endpoint, [endpoint, 0x3])
     print('[Endpoint]')
     print(f"{endpoint}: {url}/api/v3")
-    return IconService(HTTPProvider(url, 3))
+    return IconService(HTTPProvider(url, 3)), nid
 
 
 def get_address_from_keystore(keystore):
@@ -70,86 +68,3 @@ def load_keystore(keystore, passwd=None):
         return KeyWallet.load(keystore.name, passwd)
     except KeyStoreException as e:
         die(e.message)
-
-
-def ensure_tx_result(icon_service, tx_hash, wait_result):
-    print(f'\n==> https://tracker.icon.foundation/transaction/{tx_hash}')
-    count = 0
-    while wait_result:
-        result = icon_service.get_transaction_result(tx_hash, True)
-        if 'error' in result:
-            print(f'Retry: {result["error"]}')
-            count += 1
-            if count > 5:
-                die('Error: failed to get transaction result')
-            sleep(2)
-        elif 'result' in result:
-            result = result['result']
-            print(f'Result: {json.dumps(result, indent=4)}')
-            if result['status'] != '0x1':
-                die('Error: transaction failed')
-            break
-        else:
-            die(f'Error: unknown response: {json.dumps(result, indent=4)}')
-
-
-class TxHandler:
-    ZERO_ADDRESS = "cx0000000000000000000000000000000000000000"
-
-    def __init__(self, service):
-        self._icon_service = service
-
-    def _deploy(self, wallet, to, content, params, limit, nid=1):
-        transaction = DeployTransactionBuilder() \
-            .from_(wallet.get_address()) \
-            .to(to) \
-            .step_limit(limit) \
-            .version(3) \
-            .nid(nid) \
-            .content_type("application/zip") \
-            .content(content) \
-            .params(params) \
-            .build()
-        return self._icon_service.send_transaction(SignedTransaction(transaction, wallet))
-
-    def install(self, wallet, content, params=None, limit=0x50000000):
-        return self._deploy(wallet, self.ZERO_ADDRESS, content, params, limit)
-
-    def update(self, wallet, to, content, params=None, limit=0x70000000):
-        return self._deploy(wallet, to, content, params, limit)
-
-    def _send_transaction(self, transaction, wallet, limit):
-        if limit is not None:
-            signed_tx = SignedTransaction(transaction, wallet, limit)
-        else:
-            estimated_step = self._icon_service.estimate_step(transaction)
-            signed_tx = SignedTransaction(transaction, wallet, estimated_step)
-        return self._icon_service.send_transaction(signed_tx)
-
-    def invoke(self, wallet, to, method, params, nid=1, limit=None):
-        transaction = CallTransactionBuilder() \
-            .from_(wallet.get_address()) \
-            .to(to) \
-            .nid(nid) \
-            .method(method) \
-            .params(params) \
-            .build()
-        return self._send_transaction(transaction, wallet, limit)
-
-    def transfer(self, wallet, to, amount, nid=1, limit=100000):
-        transaction = TransactionBuilder() \
-            .from_(wallet.get_address()) \
-            .to(to) \
-            .value(amount) \
-            .nid(nid) \
-            .build()
-        return self._send_transaction(transaction, wallet, limit)
-
-    def get_tx_result(self, tx_hash):
-        while True:
-            try:
-                tx_result = self._icon_service.get_transaction_result(tx_hash)
-                return tx_result
-            except JSONRPCException as e:
-                print(e.message)
-                sleep(2)

@@ -14,22 +14,22 @@
 
 from iiss.stake import Stake
 from score.gov import Governance
-from util import die, in_icx, get_icon_service, get_address_from_keystore, print_response, load_keystore, \
-    TxHandler, ensure_tx_result
+from util import die, in_icx, get_icon_service, get_address_from_keystore, print_response, load_keystore
+from util.txhandler import TxHandler
 
 
 class ICX(object):
 
-    def __init__(self, service):
-        self._icon_service = service
+    def __init__(self, tx_handler):
+        self._tx_handler = tx_handler
 
     def balance(self, address, is_all):
-        balance = self._icon_service.get_balance(address)
+        balance = self._tx_handler.get_balance(address)
         status = {
             'ICX (avail)': in_icx(balance)
         }
         if is_all:
-            result = Stake(self._icon_service).query(address)
+            result = Stake(self._tx_handler).query(address)
             current_stake = int(result['stake'], 16)
             status['ICX (stake)'] = in_icx(current_stake)
             status['Total ICX  '] = in_icx(balance + current_stake)
@@ -55,12 +55,11 @@ class ICX(object):
         self.ensure_amount(amount, maximum)
         if self.ask_to_confirm(args.to, balance, amount, tx_fee):
             wallet = load_keystore(args.keystore, args.password)
-            tx_handler = TxHandler(self._icon_service)
-            tx_hash = tx_handler.transfer(wallet, args.to, amount)
-            ensure_tx_result(self._icon_service, tx_hash, False)
+            tx_hash = self._tx_handler.transfer(wallet, args.to, amount)
+            self._tx_handler.ensure_tx_result(tx_hash, True)
 
     def get_default_tx_fee(self):
-        gov = Governance(self._icon_service, None)
+        gov = Governance(self._tx_handler, None)
         step_price = int(gov.get_step_price(), 16)
         default_step = 100_000
         return step_price * default_step
@@ -87,8 +86,9 @@ class ICX(object):
 
 
 def run(action, args):
-    icon_service = get_icon_service(args.endpoint)
-    icx = ICX(icon_service)
+    icon_service, nid = get_icon_service(args.endpoint)
+    tx_handler = TxHandler(icon_service, nid)
+    icx = ICX(tx_handler)
     if args.keystore:
         address = get_address_from_keystore(args.keystore)
     elif action == 'balance' and args.address:

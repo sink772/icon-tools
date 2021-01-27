@@ -12,25 +12,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from iconsdk.builder.call_builder import CallBuilder
-
-from util import TxHandler
+from util.txhandler import TxHandler
 
 
 class Score:
 
-    def __init__(self, service, address):
-        self._icon_service = service
+    def __init__(self, tx_handler: TxHandler, address):
+        self._tx_handler = tx_handler
         self._address = address
-        self._tx_handler = TxHandler(service)
 
-    def _call(self, method, params=None):
-        call = CallBuilder() \
-            .to(self._address) \
-            .method(method) \
-            .params(params) \
-            .build()
-        return self._icon_service.call(call)
+    def call(self, method, params=None):
+        return self._tx_handler.call(self._address, method, params)
 
-    def _invoke(self, wallet, method, params=None):
-        return self._tx_handler.invoke(wallet, self._address, method, params)
+    def invoke(self, wallet, method, params=None, limit=None):
+        return self._tx_handler.invoke(wallet, self._address, method, params, limit)
+
+    @property
+    def address(self):
+        return self._address

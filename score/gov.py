@@ -14,41 +14,42 @@
 
 from score import Score
 from util import die, print_response, get_icon_service, load_keystore
+from util.txhandler import TxHandler
 
 
 class Governance(Score):
     ADDRESS = "cx0000000000000000000000000000000000000001"
 
-    def __init__(self, service, owner):
-        super().__init__(service, self.ADDRESS)
+    def __init__(self, tx_handler: TxHandler, owner):
+        super().__init__(tx_handler, self.ADDRESS)
         self._owner = owner
 
     def get_version(self):
-        return self._call("getVersion")
+        return self.call("getVersion")
 
     def get_revision(self):
-        return self._call("getRevision")
+        return self.call("getRevision")
 
     def get_step_price(self):
-        return self._call("getStepPrice")
+        return self.call("getStepPrice")
 
     def get_max_step_limit(self, ctype):
         params = {
             "contextType": ctype
         }
-        return self._call("getMaxStepLimit", params)
+        return self.call("getMaxStepLimit", params)
 
     def get_step_costs(self):
-        return self._call("getStepCosts")
+        return self.call("getStepCosts")
 
     def get_service_config(self):
-        return self._call("getServiceConfig")
+        return self.call("getServiceConfig")
 
     def get_score_status(self, address):
         params = {
             "address": address
         }
-        return self._call("getScoreStatus", params)
+        return self.call("getScoreStatus", params)
 
     def print_info(self):
         print('[Governance]')
@@ -77,16 +78,17 @@ class Governance(Score):
         params = {
             "txHash": tx_hash
         }
-        return self._invoke(self._owner, "acceptScore", params)
+        return self.invoke(self._owner, "acceptScore", params)
 
 
 def run(args):
-    icon_service = get_icon_service(args.endpoint)
+    icon_service, nid = get_icon_service(args.endpoint)
+    tx_handler = TxHandler(icon_service, nid)
     if args.keystore:
         owner = load_keystore(args.keystore, args.password)
     else:
         owner = None
-    gov = Governance(icon_service, owner)
+    gov = Governance(tx_handler, owner)
     gov.print_info()
     audit = gov.check_if_audit_enabled()
     if audit:

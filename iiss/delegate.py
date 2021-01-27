@@ -18,15 +18,15 @@ from iconsdk.exception import JSONRPCException
 
 from run import address_type
 from score.chain import ChainScore
-from util import die, in_icx, print_response, get_icon_service, get_address_from_keystore, load_keystore, \
-    ensure_tx_result
+from util import die, in_icx, print_response, get_icon_service, get_address_from_keystore, load_keystore
+from util.txhandler import TxHandler
 
 
 class Delegate(object):
 
-    def __init__(self, service):
-        self._chain = ChainScore(service)
-        self._icon_service = service
+    def __init__(self, tx_handler):
+        self._tx_handler = tx_handler
+        self._chain = ChainScore(tx_handler)
 
     def query(self, address):
         params = {
@@ -60,7 +60,7 @@ class Delegate(object):
             delegations = self._get_new_delegations(result)
             wallet = load_keystore(keystore, passwd)
             tx_hash = self.set(wallet, delegations)
-            ensure_tx_result(self._icon_service, tx_hash, False)
+            self._tx_handler.ensure_tx_result(tx_hash, True)
 
     def _get_new_delegations(self, result):
         delegations = self.convert_to_map(result['delegations'])
@@ -142,8 +142,9 @@ class Delegate(object):
 
 
 def run(args):
-    icon_service = get_icon_service(args.endpoint)
-    delegate = Delegate(icon_service)
+    icon_service, nid = get_icon_service(args.endpoint)
+    tx_handler = TxHandler(icon_service, nid)
+    delegate = Delegate(tx_handler)
     if args.prep:
         try:
             delegate.print_prep_info(args.prep)

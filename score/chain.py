@@ -13,16 +13,11 @@
 # limitations under the License.
 
 from score import Score
+from util.txhandler import TxHandler
 
 
 class ChainScore(Score):
     ADDRESS = "cx0000000000000000000000000000000000000000"
 
-    def __init__(self, service):
-        super().__init__(service, self.ADDRESS)
-
-    def call(self, method, params=None):
-        return self._call(method, params)
-
-    def invoke(self, wallet, method, params=None):
-        return self._invoke(wallet, method, params)
+    def __init__(self, tx_handler: TxHandler):
+        super().__init__(tx_handler, self.ADDRESS)

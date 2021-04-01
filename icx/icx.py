@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from iconsdk.exception import JSONRPCException
+
 from iiss.stake import Stake
 from score.gov import Governance
 from util import die, in_icx, get_icon_service, get_address_from_keystore, print_response, load_keystore
@@ -59,8 +61,11 @@ class ICX(object):
             self._tx_handler.ensure_tx_result(tx_hash, True)
 
     def get_default_tx_fee(self):
-        gov = Governance(self._tx_handler, None)
-        step_price = int(gov.get_step_price(), 16)
+        try:
+            gov = Governance(self._tx_handler, None)
+            step_price = int(gov.get_step_price(), 16)
+        except JSONRPCException:
+            step_price = 12_500_000_000
         default_step = 100_000
         return step_price * default_step
 

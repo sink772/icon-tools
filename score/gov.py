@@ -99,7 +99,21 @@ class Governance(Score):
         params = {
             "txHash": tx_hash
         }
-        return self.invoke(owner, "acceptScore", params, limit=500_000)
+        res_hash = self.invoke(owner, "acceptScore", params, limit=500_000)
+        self._tx_handler.ensure_tx_result(res_hash, True)
+
+    def reject_score(self, keystore, tx_hash, reason):
+        if not reason:
+            die('Error: reason should be specified for rejecting')
+        if not keystore:
+            die('Error: keystore should be specified to invoke rejectScore')
+        owner = load_keystore(keystore)
+        params = {
+            "txHash": tx_hash,
+            "reason": reason
+        }
+        res_hash = self.invoke(owner, "rejectScore", params, limit=300_000)
+        self._tx_handler.ensure_tx_result(res_hash, True)
 
 
 def run(args):
@@ -110,6 +124,10 @@ def run(args):
         tx_hash = args.accept_score
         if gov.check_if_tx_pending(tx_hash):
             gov.accept_score(args.keystore, tx_hash)
+    elif args.reject_score:
+        tx_hash = args.reject_score
+        if gov.check_if_tx_pending(tx_hash):
+            gov.reject_score(args.keystore, tx_hash, args.reason)
     else:
         gov.print_info()
         audit = gov.check_if_audit_enabled()

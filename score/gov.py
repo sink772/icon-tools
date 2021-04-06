@@ -20,9 +20,8 @@ from util.txhandler import TxHandler
 class Governance(Score):
     ADDRESS = "cx0000000000000000000000000000000000000001"
 
-    def __init__(self, tx_handler: TxHandler, owner):
+    def __init__(self, tx_handler: TxHandler):
         super().__init__(tx_handler, self.ADDRESS)
-        self._owner = owner
 
     def get_version(self):
         return self.call("getVersion")
@@ -72,26 +71,49 @@ class Governance(Score):
         else:
             return False
 
-    def accept_score(self, tx_hash):
-        if not self._owner:
-            die('Error: owner should be specified to invoke acceptScore')
+    def check_if_tx_pending(self, tx_hash):
+        result = self._tx_handler.get_tx_result(tx_hash)
+        try:
+            score_address = result['scoreAddress']
+            status = self.get_score_status(score_address)
+            print_response('status', status)
+            if status['next']['status'] == 'pending' and \
+                    status['next']['deployTxHash'] == tx_hash:
+                return True
+            else:
+                die(f'Error: invalid txHash or no pending tx')
+        except KeyError as e:
+            if str(e) == "'scoreAddress'":
+                msg = 'not a deploy transaction'
+            elif str(e) == "'next'":
+                msg = 'already accepted or rejected'
+            else:
+                msg = str(e)
+            die(f'Error: {msg}')
+        return False
+
+    def accept_score(self, keystore, tx_hash):
+        if not keystore:
+            die('Error: keystore should be specified to invoke acceptScore')
+        owner = load_keystore(keystore)
         params = {
             "txHash": tx_hash
         }
-        return self.invoke(self._owner, "acceptScore", params)
+        return self.invoke(owner, "acceptScore", params, limit=500_000)
 
 
 def run(args):
     icon_service, nid = get_icon_service(args.endpoint)
     tx_handler = TxHandler(icon_service, nid)
-    if args.keystore:
-        owner = load_keystore(args.keystore, args.password)
+    gov = Governance(tx_handler)
+    if args.accept_score:
+        tx_hash = args.accept_score
+        if gov.check_if_tx_pending(tx_hash):
+            gov.accept_score(args.keystore, tx_hash)
     else:
-        owner = None
-    gov = Governance(tx_handler, owner)
-    gov.print_info()
-    audit = gov.check_if_audit_enabled()
-    if audit:
-        print('Audit: enabled')
-    else:
-        print('Audit: disabled')
+        gov.print_info()
+        audit = gov.check_if_audit_enabled()
+        if audit:
+            print('Audit: enabled')
+        else:
+            print('Audit: disabled')

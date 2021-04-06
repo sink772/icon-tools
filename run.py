@@ -18,6 +18,17 @@ def address_type(string):
     raise argparse.ArgumentTypeError(f"Invalid address: '{string}'")
 
 
+def tx_hash_type(string):
+    if isinstance(string, str) and len(string) == 66:
+        prefix = string[:2]
+        if prefix == "0x":
+            hash_bytes = bytes.fromhex(string[2:])
+            tx_hash = hash_bytes.hex()
+            if str(string) == prefix + tx_hash:
+                return string
+    raise argparse.ArgumentTypeError(f"Invalid txHash: '{string}'")
+
+
 class Command(object):
 
     def __init__(self):
@@ -32,7 +43,8 @@ class Command(object):
         subparsers.dest = 'command'
 
         # create a parser for 'gov' command
-        subparsers.add_parser('gov', help='Check governance status')
+        gov_parser = subparsers.add_parser('gov', help='Check governance status')
+        gov_parser.add_argument('--accept-score', type=tx_hash_type, help='txHash of the SCORE deploy transaction')
 
         # create a parser for 'balance' command
         balance_parser = subparsers.add_parser('balance', help='Get ICX balance of given address')

@@ -62,7 +62,7 @@ class ICX(object):
 
     def get_default_tx_fee(self):
         try:
-            gov = Governance(self._tx_handler, None)
+            gov = Governance(self._tx_handler)
             step_price = int(gov.get_step_price(), 16)
         except JSONRPCException:
             step_price = 12_500_000_000

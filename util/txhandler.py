@@ -67,11 +67,12 @@ class TxHandler:
             .build()
         return self._icon_service.call(_call)
 
-    def invoke(self, wallet, to, method, params, limit=None):
+    def invoke(self, wallet, to, method, params, value=0, limit=None):
         transaction = CallTransactionBuilder() \
             .from_(wallet.get_address()) \
             .to(to) \
             .nid(self._nid) \
+            .value(value) \
             .method(method) \
             .params(params) \
             .build()

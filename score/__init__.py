@@ -24,8 +24,8 @@ class Score:
     def call(self, method, params=None):
         return self._tx_handler.call(self._address, method, params)
 
-    def invoke(self, wallet, method, params=None, limit=None):
-        return self._tx_handler.invoke(wallet, self._address, method, params, limit)
+    def invoke(self, wallet, method, params=None, value=0, limit=None):
+        return self._tx_handler.invoke(wallet, self._address, method, params, value, limit)
 
     @property
     def address(self):

@@ -3,7 +3,7 @@
 import argparse
 
 from icx import icx
-from iiss import iscore, stake, delegate
+from iiss import iscore, stake, delegate, prep
 from score import gov
 
 
@@ -59,8 +59,13 @@ class Command(object):
         delegate_parser = subparsers.add_parser('delegate', help='Query and set delegations')
         delegate_parser.add_argument('--address', type=address_type, help='target address to perform operations')
         delegate_parser.add_argument('--set', action='store_true', help='set new delegations')
-        delegate_parser.add_argument('--prep', type=address_type, metavar='ADDRESS',
-                                     help='get P-Rep register information')
+
+        # create a parser for 'prep' command
+        prep_parser = subparsers.add_parser('prep', help='P-Rep management')
+        prep_parser.add_argument('--register-test-preps', type=int, metavar='NUM',
+                                 help='register NUM of P-Reps for testing')
+        prep_parser.add_argument('--get', type=address_type, metavar='ADDRESS', help='get P-Rep information')
+        prep_parser.add_argument('--get-preps', action='store_true', help='get all P-Reps information')
 
         args = parser.parse_args()
         getattr(self, args.command)(args)
@@ -88,6 +93,10 @@ class Command(object):
     @staticmethod
     def delegate(args):
         delegate.run(args)
+
+    @staticmethod
+    def prep(args):
+        prep.run(args)
 
 
 if __name__ == "__main__":

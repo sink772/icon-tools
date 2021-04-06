@@ -16,6 +16,7 @@ import argparse
 
 from iconsdk.exception import JSONRPCException
 
+from iiss.prep import PRep
 from run import address_type
 from score.chain import ChainScore
 from util import die, in_icx, print_response, get_icon_service, get_address_from_keystore, load_keystore
@@ -27,18 +28,13 @@ class Delegate(object):
     def __init__(self, tx_handler):
         self._tx_handler = tx_handler
         self._chain = ChainScore(tx_handler)
+        self._prep = PRep(tx_handler)
 
     def query(self, address):
         params = {
             "address": address
         }
         return self._chain.call("getDelegation", params)
-
-    def get_prep(self, address):
-        params = {
-            "address": address
-        }
-        return self._chain.call("getPRep", params)
 
     def set(self, wallet, delegations):
         delegation_list = []
@@ -86,7 +82,7 @@ class Delegate(object):
                     else:
                         raise ValueError(f'Error: invalid input: {confirm}')
                 address = address_type(confirm)
-                self.print_prep_info(address)
+                self._prep.print_prep_info(address)
                 maximum = voting_power + int(delegations.get(address, '0x0'), 16)
                 amount = self._check_value(input(f'Delegation amount (max: {maximum}): '), maximum)
                 if amount == 0:
@@ -137,20 +133,11 @@ class Delegate(object):
         print_response(address, result)
         print('DelegatedICX =', in_icx(int(result['totalDelegated'], 16)))
 
-    def print_prep_info(self, prep_addr):
-        print_response('P-Rep Info', self.get_prep(prep_addr))
-
 
 def run(args):
     icon_service, nid = get_icon_service(args.endpoint)
     tx_handler = TxHandler(icon_service, nid)
     delegate = Delegate(tx_handler)
-    if args.prep:
-        try:
-            delegate.print_prep_info(args.prep)
-        except JSONRPCException:
-            pass
-        exit(-1)
     if args.keystore:
         address = get_address_from_keystore(args.keystore)
     elif args.address:

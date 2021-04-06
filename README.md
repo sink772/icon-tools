@@ -30,6 +30,7 @@ Available commands:
     iscore              Query and claim IScore
     stake               Query and set staking
     delegate            Query and set delegations
+    prep                P-Rep management
 ```
 
 ## Auto-staking

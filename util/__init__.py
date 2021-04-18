@@ -45,6 +45,7 @@ def get_icon_service(endpoint):
         "testnet": ['https://test-ctz.solidwallet.io', 0x2],
         "bicon":   ['https://bicon.net.solidwallet.io', 0x3],
         "gangnam": ['https://gicon.net.solidwallet.io', 0x7],
+        "sejong":  ['https://sejong.net.solidwallet.io', 0x53],
         "gochain": ['http://localhost:9082', 0x3],
         "local":   ['http://localhost:9000', 0x3],
     }

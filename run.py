@@ -48,6 +48,8 @@ class Command(object):
                                 help='accept the given deploy transaction')
         gov_parser.add_argument('--reject-score', type=tx_hash_type, metavar='TX_HASH',
                                 help='reject the given deploy transaction')
+        gov_parser.add_argument('--reject-batch', type=str, metavar='CONTRACTS_JSON',
+                                help='reject multiple deploy transactions')
         gov_parser.add_argument('--reason', type=str, help='reason for rejecting')
 
         # create a parser for 'balance' command

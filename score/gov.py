@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import json
+
 from score import Score
 from util import die, print_response, get_icon_service, load_keystore
 from util.txhandler import TxHandler
@@ -92,42 +94,58 @@ class Governance(Score):
             die(f'Error: {msg}')
         return False
 
-    def accept_score(self, keystore, tx_hash):
-        if not keystore:
-            die('Error: keystore should be specified to invoke acceptScore')
-        owner = load_keystore(keystore)
+    def accept_score(self, wallet, tx_hash):
         params = {
             "txHash": tx_hash
         }
-        res_hash = self.invoke(owner, "acceptScore", params, limit=500_000)
+        res_hash = self.invoke(wallet, "acceptScore", params, limit=500_000)
         self._tx_handler.ensure_tx_result(res_hash, True)
 
-    def reject_score(self, keystore, tx_hash, reason):
+    def reject_score(self, wallet, tx_hash, reason):
         if not reason:
             die('Error: reason should be specified for rejecting')
-        if not keystore:
-            die('Error: keystore should be specified to invoke rejectScore')
-        owner = load_keystore(keystore)
         params = {
             "txHash": tx_hash,
             "reason": reason
         }
-        res_hash = self.invoke(owner, "rejectScore", params, limit=300_000)
+        res_hash = self.invoke(wallet, "rejectScore", params, limit=300_000)
         self._tx_handler.ensure_tx_result(res_hash, True)
+
+    def reject_batch(self, keystore, json_file, reason):
+        if not keystore:
+            die('Error: keystore should be specified')
+        wallet = load_keystore(keystore)
+
+        with open(json_file, "r") as f:
+            contracts: dict = json.loads(f.read())
+        for name, score_address in contracts.items():
+            print(f'\n>>> {name}: {score_address}')
+            status = self.get_score_status(score_address)
+            print_response('status', status)
+            if status['next']['status'] == 'pending':
+                deploy_hash = status['next']['deployTxHash']
+                confirm = input('\n==> Are you sure you want to reject this score? (y/n) ')
+                if confirm == 'y':
+                    self.reject_score(wallet, deploy_hash, reason)
 
 
 def run(args):
     icon_service, nid = get_icon_service(args.endpoint)
     tx_handler = TxHandler(icon_service, nid)
     gov = Governance(tx_handler)
-    if args.accept_score:
-        tx_hash = args.accept_score
+    tx_hash = args.accept_score if args.accept_score else args.reject_score
+    if tx_hash:
         if gov.check_if_tx_pending(tx_hash):
-            gov.accept_score(args.keystore, tx_hash)
-    elif args.reject_score:
-        tx_hash = args.reject_score
-        if gov.check_if_tx_pending(tx_hash):
-            gov.reject_score(args.keystore, tx_hash, args.reason)
+            if not args.keystore:
+                die('Error: keystore should be specified')
+            wallet = load_keystore(args.keystore)
+            if args.accept_score:
+                gov.accept_score(wallet, tx_hash)
+            else:
+                gov.reject_score(wallet, tx_hash, args.reason)
+    elif args.reject_batch:
+        json_file = args.reject_batch
+        gov.reject_batch(args.keystore, json_file, args.reason)
     else:
         gov.print_info()
         audit = gov.check_if_audit_enabled()

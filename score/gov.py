@@ -111,22 +111,23 @@ class Governance(Score):
         res_hash = self.invoke(wallet, "rejectScore", params, limit=300_000)
         self._tx_handler.ensure_tx_result(res_hash, True)
 
-    def reject_batch(self, keystore, json_file, reason):
-        if not keystore:
-            die('Error: keystore should be specified')
-        wallet = load_keystore(keystore)
-
-        with open(json_file, "r") as f:
-            contracts: dict = json.loads(f.read())
+    def process_batch(self, wallet, contracts, accept, reason):
+        if accept:
+            action = 'accept'
+        else:
+            action = 'reject'
         for name, score_address in contracts.items():
             print(f'\n>>> {name}: {score_address}')
             status = self.get_score_status(score_address)
             print_response('status', status)
             if status['next']['status'] == 'pending':
                 deploy_hash = status['next']['deployTxHash']
-                confirm = input('\n==> Are you sure you want to reject this score? (y/n) ')
+                confirm = input(f'\n==> Are you sure you want to {action} this score? (y/n) ')
                 if confirm == 'y':
-                    self.reject_score(wallet, deploy_hash, reason)
+                    if accept:
+                        self.accept_score(wallet, deploy_hash)
+                    else:
+                        self.reject_score(wallet, deploy_hash, reason)
 
 
 def run(args):
@@ -134,6 +135,7 @@ def run(args):
     tx_handler = TxHandler(icon_service, nid)
     gov = Governance(tx_handler)
     tx_hash = args.accept_score if args.accept_score else args.reject_score
+    json_file = args.accept_batch if args.accept_batch else args.reject_batch
     if tx_hash:
         if gov.check_if_tx_pending(tx_hash):
             if not args.keystore:
@@ -143,9 +145,13 @@ def run(args):
                 gov.accept_score(wallet, tx_hash)
             else:
                 gov.reject_score(wallet, tx_hash, args.reason)
-    elif args.reject_batch:
-        json_file = args.reject_batch
-        gov.reject_batch(args.keystore, json_file, args.reason)
+    elif json_file:
+        if not args.keystore:
+            die('Error: keystore should be specified')
+        wallet = load_keystore(args.keystore)
+        with open(json_file, "r") as f:
+            contracts: dict = json.loads(f.read())
+        gov.process_batch(wallet, contracts, args.accept_batch, args.reason)
     else:
         gov.print_info()
         audit = gov.check_if_audit_enabled()

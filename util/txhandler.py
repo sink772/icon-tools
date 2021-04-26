@@ -26,13 +26,18 @@ from . import die, print_response
 class TxHandler:
     ZERO_ADDRESS = "cx0000000000000000000000000000000000000000"
 
-    def __init__(self, service, nid):
+    def __init__(self, service, nid, engine):
         self._icon_service = service
         self._nid = nid
+        self._engine = engine
 
     @property
     def icon_service(self):
         return self._icon_service
+
+    @property
+    def get_engine(self):
+        return self._engine
 
     def _send_transaction(self, transaction, wallet, limit):
         if limit is not None:

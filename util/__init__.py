@@ -41,18 +41,18 @@ def print_response(header, msg):
 
 def get_icon_service(endpoint):
     endpoint_map = {
-        "mainnet": ['https://ctz.solidwallet.io', 0x1],
-        "testnet": ['https://test-ctz.solidwallet.io', 0x2],
-        "bicon":   ['https://bicon.net.solidwallet.io', 0x3],
-        "gangnam": ['https://gicon.net.solidwallet.io', 0x7],
-        "sejong":  ['https://sejong.net.solidwallet.io', 0x53],
-        "gochain": ['http://localhost:9082', 0x3],
-        "local":   ['http://localhost:9000', 0x3],
+        "mainnet": ['https://ctz.solidwallet.io', 0x1, 'lc'],
+        "testnet": ['https://test-ctz.solidwallet.io', 0x2, 'lc'],
+        "bicon":   ['https://bicon.net.solidwallet.io', 0x3, 'lc'],
+        "gangnam": ['https://gicon.net.solidwallet.io', 0x7, 'gl'],
+        "sejong":  ['https://sejong.net.solidwallet.io', 0x53, 'gl'],
+        "gochain": ['http://localhost:9082', 0x3, 'gl'],
+        "local":   ['http://localhost:9000', 0x3, 'lc'],
     }
-    url, nid = endpoint_map.get(endpoint, [endpoint, 0x3])
+    url, nid, eng = endpoint_map.get(endpoint, [endpoint, 0x3, 'gl'])
     print('[Endpoint]')
     print(f"{endpoint}: {url}/api/v3")
-    return IconService(HTTPProvider(url, 3)), nid
+    return IconService(HTTPProvider(url, 3)), nid, eng
 
 
 def get_address_from_keystore(keystore):

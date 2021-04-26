@@ -20,13 +20,29 @@ from util.txhandler import TxHandler
 
 
 class Governance(Score):
-    ADDRESS = "cx0000000000000000000000000000000000000001"
+    CHAIN_ADDRESS = "cx0000000000000000000000000000000000000000"
+    GOV_ADDRESS = "cx0000000000000000000000000000000000000001"
 
     def __init__(self, tx_handler: TxHandler):
-        super().__init__(tx_handler, self.ADDRESS)
+        super().__init__(tx_handler, self.GOV_ADDRESS)
+
+    def is_goloop(self):
+        return self._tx_handler.get_engine == 'gl'
+
+    def get_address(self):
+        if self.is_goloop():
+            return self.CHAIN_ADDRESS
+        else:
+            return self.GOV_ADDRESS
+
+    # override call implementation
+    def call(self, method, params=None):
+        return self._tx_handler.call(self.get_address(), method, params)
 
     def get_version(self):
-        return self.call("getVersion")
+        if not self.is_goloop():
+            return self.call("getVersion")
+        return None
 
     def get_revision(self):
         return self.call("getRevision")
@@ -68,10 +84,10 @@ class Governance(Score):
 
     def check_if_audit_enabled(self):
         service_config = self.get_service_config()
-        if service_config.get('AUDIT', 0) == '0x1':
-            return True
+        if self.is_goloop():
+            return int(service_config, 16) & 0x2 != 0
         else:
-            return False
+            return service_config.get('AUDIT', 0) == '0x1'
 
     def check_if_tx_pending(self, tx_hash):
         result = self._tx_handler.get_tx_result(tx_hash)

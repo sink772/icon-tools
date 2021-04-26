@@ -135,8 +135,7 @@ class Delegate(object):
 
 
 def run(args):
-    icon_service, nid = get_icon_service(args.endpoint)
-    tx_handler = TxHandler(icon_service, nid)
+    tx_handler = TxHandler(*get_icon_service(args.endpoint))
     delegate = Delegate(tx_handler)
     if args.keystore:
         address = get_address_from_keystore(args.keystore)

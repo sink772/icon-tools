@@ -131,8 +131,7 @@ class Governance(Score):
 
 
 def run(args):
-    icon_service, nid = get_icon_service(args.endpoint)
-    tx_handler = TxHandler(icon_service, nid)
+    tx_handler = TxHandler(*get_icon_service(args.endpoint))
     gov = Governance(tx_handler)
     tx_hash = args.accept_score if args.accept_score else args.reject_score
     json_file = args.accept_batch if args.accept_batch else args.reject_batch

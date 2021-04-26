@@ -107,8 +107,7 @@ class PRep(object):
 
 
 def run(args):
-    icon_service, nid = get_icon_service(args.endpoint)
-    tx_handler = TxHandler(icon_service, nid)
+    tx_handler = TxHandler(*get_icon_service(args.endpoint))
     prep = PRep(tx_handler)
     if args.get or args.get_preps:
         try:

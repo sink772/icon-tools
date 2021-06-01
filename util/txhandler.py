@@ -98,6 +98,9 @@ class TxHandler:
     def get_tx_result(self, tx_hash):
         return self._icon_service.get_transaction_result(tx_hash)
 
+    def get_tx_by_hash(self, tx_hash):
+        return self._icon_service.get_transaction(tx_hash, True)
+
     def ensure_tx_result(self, tx_hash, verbose=False):
         if verbose and self._nid == 1:
             print(f'\n==> https://tracker.icon.foundation/transaction/{tx_hash}')

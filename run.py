@@ -4,7 +4,7 @@ import argparse
 
 from icx import icx
 from iiss import iscore, stake, delegate, prep
-from score import gov
+from score import gov, audit
 
 
 def address_type(string):
@@ -54,6 +54,10 @@ class Command(object):
                                 help='reject multiple deploy transactions')
         gov_parser.add_argument('--reason', type=str, help='reason for rejecting')
 
+        # create a parser for 'audit' command
+        audit_parser = subparsers.add_parser('audit', help='Perform audit operations')
+        audit_parser.add_argument('--interactive', action='store_true', help='enter to interactive mode')
+
         # create a parser for 'balance' command
         balance_parser = subparsers.add_parser('balance', help='Get ICX balance of given address')
         balance_parser.add_argument('--address', type=address_type, help='target address to perform operations')
@@ -93,6 +97,10 @@ class Command(object):
     @staticmethod
     def gov(args):
         gov.run(args)
+
+    @staticmethod
+    def audit(args):
+        audit.run(args)
 
     @staticmethod
     def balance(args):

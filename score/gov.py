@@ -114,7 +114,7 @@ class Governance(Score):
         params = {
             "txHash": tx_hash
         }
-        res_hash = self.invoke(wallet, "acceptScore", params, limit=500_000)
+        res_hash = self.invoke(wallet, "acceptScore", params, limit=1_000_000)
         self._tx_handler.ensure_tx_result(res_hash, True)
 
     def reject_score(self, wallet, tx_hash, reason):
@@ -124,7 +124,7 @@ class Governance(Score):
             "txHash": tx_hash,
             "reason": reason
         }
-        res_hash = self.invoke(wallet, "rejectScore", params, limit=300_000)
+        res_hash = self.invoke(wallet, "rejectScore", params, limit=500_000)
         self._tx_handler.ensure_tx_result(res_hash, True)
 
     def process_batch(self, wallet, contracts, accept, reason):
@@ -136,6 +136,8 @@ class Governance(Score):
             print(f'\n>>> {name}: {score_address}')
             status = self.get_score_status(score_address)
             print_response('status', status)
+            if reason:
+                print(f'\"reason\": \"{reason}\"')
             if status['next']['status'] == 'pending':
                 deploy_hash = status['next']['deployTxHash']
                 confirm = input(f'\n==> Are you sure you want to {action} this score? (y/n) ')
@@ -153,6 +155,8 @@ def run(args):
     json_file = args.accept_batch if args.accept_batch else args.reject_batch
     if tx_hash:
         if gov.check_if_tx_pending(tx_hash):
+            if args.reason:
+                print(f'\"reason\": \"{args.reason}\"')
             if not args.keystore:
                 die('Error: keystore should be specified')
             wallet = load_keystore(args.keystore)

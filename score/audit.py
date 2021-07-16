@@ -104,10 +104,23 @@ class Audit(object):
         except requests.ConnectionError as e:
             die(f'Error: {e}')
 
-    def run(self, interactive: bool):
+    def run(self, args):
         contracts = self.get_pending_list()
         if len(contracts) == 0:
             die('No pending SCOREs')
+
+        if args.export:
+            print('{')
+            for i, item in reversed(list(enumerate(contracts))):
+                version = item['version']
+                name = item['contractName']
+                address = item['contractAddr']
+                if i > 0:
+                    print(f'    "{i}:{version}:{name}": "{address}",')
+                else:
+                    print(f'    "{i}:{version}:{name}": "{address}"')
+            print('}')
+            return
 
         for i, item in enumerate(contracts):
             version = item['version']
@@ -117,7 +130,7 @@ class Audit(object):
             create_date = item['createDate'].split('.')[0]
             print(f'[{i}] {version} {name}, {create_tx} - {address} - {create_date}')
 
-        while interactive:
+        while args.interactive:
             try:
                 num = input('\n==> Select: ')
                 if 0 <= int(num) < len(contracts):
@@ -140,4 +153,4 @@ class Audit(object):
 def run(args):
     tx_handler = TxHandler(*get_icon_service(args.endpoint))
     audit = Audit(tx_handler, args.keystore)
-    audit.run(args.interactive)
+    audit.run(args)

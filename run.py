@@ -57,6 +57,7 @@ class Command(object):
         # create a parser for 'audit' command
         audit_parser = subparsers.add_parser('audit', help='Perform audit operations')
         audit_parser.add_argument('--interactive', action='store_true', help='enter to interactive mode')
+        audit_parser.add_argument('--export', action='store_true', help='export pending list as json')
 
         # create a parser for 'balance' command
         balance_parser = subparsers.add_parser('balance', help='Get ICX balance of given address')

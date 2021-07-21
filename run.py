@@ -44,6 +44,8 @@ class Command(object):
 
         # create a parser for 'gov' command
         gov_parser = subparsers.add_parser('gov', help='Check governance status')
+        gov_parser.add_argument('--score-status', type=address_type, metavar='ADDRESS',
+                                help='show the given SCORE status')
         gov_parser.add_argument('--accept-score', type=tx_hash_type, metavar='TX_HASH',
                                 help='accept the given deploy transaction')
         gov_parser.add_argument('--accept-batch', type=str, metavar='CONTRACTS_JSON',

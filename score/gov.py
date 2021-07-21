@@ -153,7 +153,10 @@ def run(args):
     gov = Governance(tx_handler)
     tx_hash = args.accept_score if args.accept_score else args.reject_score
     json_file = args.accept_batch if args.accept_batch else args.reject_batch
-    if tx_hash:
+    if args.score_status:
+        status = gov.get_score_status(args.score_status)
+        print_response('status', status)
+    elif tx_hash:
         if gov.check_if_tx_pending(tx_hash):
             if args.reason:
                 print(f'\"reason\": \"{args.reason}\"')

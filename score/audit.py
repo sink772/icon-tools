@@ -16,7 +16,7 @@ import json
 import requests
 
 from score.gov import Governance
-from util import die, get_icon_service, load_keystore
+from util import die, get_icon_service, load_keystore, print_response
 from util.txhandler import TxHandler
 
 STATUS_OK = 200
@@ -35,6 +35,7 @@ class Audit(object):
             'a': self.accept_score,
             'r': self.reject_score,
             'd': self.download_contract,
+            's': self.get_score_status,
             'v': self.verify_contract
         }
 
@@ -76,6 +77,12 @@ class Audit(object):
                 wallet = load_keystore(self._keystore)
                 gov.reject_score(wallet, tx_hash, reason)
         return False
+
+    def get_score_status(self, contract):
+        address = contract['contractAddr']
+        gov = Governance(self._tx_handler)
+        print_response('status', gov.get_score_status(address))
+        return True
 
     def download_contract(self, contract):
         create_tx = contract['createTx']
@@ -134,8 +141,8 @@ class Audit(object):
             try:
                 num = input('\n==> Select: ')
                 if 0 <= int(num) < len(contracts):
-                    action = input('Action ([a]ccept, [r]eject, [d]ownload, [v]erify: ')
-                    if len(action) == 1 and action in "ardv":
+                    action = input('Action ([a]ccept, [r]eject, [s]tatus, [d]ownload, [v]erify: ')
+                    if len(action) == 1 and action in "ardvs":
                         _handler = self._method_handler[action]
                         if _handler(contracts[int(num)]):
                             continue

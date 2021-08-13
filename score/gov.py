@@ -158,15 +158,21 @@ def run(args):
         print_response('status', status)
     elif tx_hash:
         if gov.check_if_tx_pending(tx_hash):
-            if args.reason:
-                print(f'\"reason\": \"{args.reason}\"')
+            if args.reject_score:
+                if args.reason:
+                    reject_reason = args.reason
+                else:
+                    reason = input('\n==> Reason: ')
+                    if len(reason) > 0:
+                        reject_reason = reason
+                print(f'\"reason\": \"{reject_reason}\"')
             if not args.keystore:
                 die('Error: keystore should be specified')
             wallet = load_keystore(args.keystore)
             if args.accept_score:
                 gov.accept_score(wallet, tx_hash)
             else:
-                gov.reject_score(wallet, tx_hash, args.reason)
+                gov.reject_score(wallet, tx_hash, reject_reason)
     elif json_file:
         if not args.keystore:
             die('Error: keystore should be specified')

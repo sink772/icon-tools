@@ -41,7 +41,7 @@ class Audit(object):
 
     @staticmethod
     def get_pending_list():
-        url = "https://tracker.icon.foundation/v3/contract/pendingList"
+        url = "https://tracker.icon.foundation/v3/contract/pendingList?count=25"
         res = requests.get(url)
         ret = list()
         if STATUS_OK == res.status_code:
@@ -129,13 +129,7 @@ class Audit(object):
             print('}')
             return
 
-        for i, item in enumerate(contracts):
-            version = item['version']
-            name = item['contractName']
-            create_tx = item['createTx']
-            address = item['contractAddr']
-            create_date = item['createDate'].split('.')[0]
-            print(f'[{i}] {version} {name}, {create_tx} - {address} - {create_date}')
+        self.print_pending_contracts(contracts)
 
         while args.interactive:
             try:
@@ -154,7 +148,18 @@ class Audit(object):
                 die('exit')
             except ValueError as e:
                 print(e.__str__())
+                self.print_pending_contracts(contracts)
                 continue
+
+    @staticmethod
+    def print_pending_contracts(contracts):
+        for i, item in enumerate(contracts):
+            version = item['version']
+            name = item['contractName']
+            create_tx = item['createTx']
+            address = item['contractAddr']
+            create_date = item['createDate'].split('.')[0]
+            print(f'[{i}] {version} {name}, {create_tx} - {address} - {create_date}')
 
 
 def run(args):

@@ -41,15 +41,15 @@ def print_response(header, msg):
 
 def get_icon_service(endpoint):
     endpoint_map = {
-        "mainnet": ['https://ctz.solidwallet.io', 0x1, 'gl'],
-        "sejong":  ['https://sejong.net.solidwallet.io', 0x53, 'gl'],
-        "btpnet":  ['https://btp.net.solidwallet.io', 0x42, 'gl'],
-        "gochain": ['http://localhost:9082', 0x3, 'gl'],
+        "mainnet": ['https://ctz.solidwallet.io', 0x1],
+        "sejong":  ['https://sejong.net.solidwallet.io', 0x53],
+        "btpnet":  ['https://btp.net.solidwallet.io', 0x42],
+        "gochain": ['http://localhost:9082', 0x3],
     }
-    url, nid, eng = endpoint_map.get(endpoint, [endpoint, 0x3, 'gl'])
+    url, nid = endpoint_map.get(endpoint, [endpoint, 0x3])
     print('[Endpoint]')
     print(f"{endpoint}: {url}/api/v3")
-    return IconService(HTTPProvider(url, 3)), nid, eng
+    return IconService(HTTPProvider(url, 3)), nid
 
 
 def get_address_from_keystore(keystore):

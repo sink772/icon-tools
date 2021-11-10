@@ -24,20 +24,19 @@ from . import die, print_response
 
 
 class TxHandler:
-    ZERO_ADDRESS = "cx0000000000000000000000000000000000000000"
+    SYSTEM_ADDRESS = "cx0000000000000000000000000000000000000000"
 
-    def __init__(self, service, nid, engine):
+    def __init__(self, service, nid):
         self._icon_service = service
         self._nid = nid
-        self._engine = engine
 
     @property
     def icon_service(self):
         return self._icon_service
 
     @property
-    def get_engine(self):
-        return self._engine
+    def nid(self):
+        return self._nid
 
     def _send_transaction(self, transaction, wallet, limit):
         if limit is not None:
@@ -59,7 +58,7 @@ class TxHandler:
         return self._send_transaction(transaction, wallet, limit)
 
     def install(self, wallet, content, params=None, limit=None):
-        return self._deploy(wallet, self.ZERO_ADDRESS, content, params, limit)
+        return self._deploy(wallet, self.SYSTEM_ADDRESS, content, params, limit)
 
     def update(self, wallet, to, content, params=None, limit=None):
         return self._deploy(wallet, to, content, params, limit)

@@ -15,23 +15,23 @@
 import json
 
 from score import Score
+from score.chain import ChainScore
 from util import die, print_response, get_icon_service, load_keystore
 from util.txhandler import TxHandler
 
 
 class Governance(Score):
-    CHAIN_ADDRESS = "cx0000000000000000000000000000000000000000"
     GOV_ADDRESS = "cx0000000000000000000000000000000000000001"
 
     def __init__(self, tx_handler: TxHandler):
         super().__init__(tx_handler, self.GOV_ADDRESS)
 
-    def is_goloop(self):
-        return self._tx_handler.get_engine == 'gl'
+    def is_mainnet(self):
+        return self._tx_handler.nid == 0x1
 
     def get_address(self):
-        if self.is_goloop():
-            return self.CHAIN_ADDRESS
+        if not self.is_mainnet():
+            return ChainScore.ADDRESS
         else:
             return self.GOV_ADDRESS
 
@@ -40,7 +40,7 @@ class Governance(Score):
         return self._tx_handler.call(self.get_address(), method, params)
 
     def get_version(self):
-        if not self.is_goloop():
+        if self.is_mainnet():
             return self.call("getVersion")
         return None
 
@@ -84,7 +84,7 @@ class Governance(Score):
 
     def check_if_audit_enabled(self):
         service_config = self.get_service_config()
-        if self.is_goloop():
+        if not self.is_mainnet():
             return int(service_config, 16) & 0x2 != 0
         else:
             return service_config.get('AUDIT', 0) == '0x1'

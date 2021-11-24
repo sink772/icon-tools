@@ -23,6 +23,15 @@ from iconsdk.signed_transaction import SignedTransaction
 from . import die, print_response
 
 
+def get_tracker_prefix(nid):
+    tracker_map = {
+        0x1: 'https://tracker.icon.foundation/transaction',
+        0x2: 'https://lisbon.tracker.solidwallet.io/transaction',
+        0x53: 'https://sejong.tracker.solidwallet.io/transaction',
+    }
+    return tracker_map.get(nid, None)
+
+
 class TxHandler:
     SYSTEM_ADDRESS = "cx0000000000000000000000000000000000000000"
 
@@ -101,8 +110,10 @@ class TxHandler:
         return self._icon_service.get_transaction(tx_hash, True)
 
     def ensure_tx_result(self, tx_hash, verbose=False):
-        if verbose and self._nid == 1:
-            print(f'\n==> https://tracker.icon.foundation/transaction/{tx_hash}')
+        if verbose:
+            prefix = get_tracker_prefix(self.nid)
+            if prefix is not None:
+                print(f'\n==> {prefix}/{tx_hash}')
         count = 5
         while True:
             result = self._icon_service.get_transaction_result(tx_hash, True)

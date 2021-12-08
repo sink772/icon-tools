@@ -27,6 +27,7 @@ def get_tracker_prefix(nid):
     tracker_map = {
         0x1: 'https://tracker.icon.foundation/transaction',
         0x2: 'https://lisbon.tracker.solidwallet.io/transaction',
+        0x7: 'https://berlin.tracker.solidwallet.io/transaction',
         0x53: 'https://sejong.tracker.solidwallet.io/transaction',
     }
     return tracker_map.get(nid, None)

@@ -45,6 +45,7 @@ def get_icon_service(endpoint):
         "lisbon":  ['https://lisbon.net.solidwallet.io', 0x2],
         "sejong":  ['https://sejong.net.solidwallet.io', 0x53],
         "btpnet":  ['https://btp.net.solidwallet.io', 0x42],
+        "berlin":  ['https://berlin.net.solidwallet.io', 0x7],
         "local":   ['http://localhost:9082', 0x3],
     }
     url, nid = endpoint_map.get(endpoint, [endpoint, 0x3])

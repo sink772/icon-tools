@@ -16,7 +16,7 @@ import json
 import requests
 
 from score.gov import Governance
-from util import die, get_icon_service, load_keystore, print_response
+from util import die, get_icon_service, get_tracker_prefix, load_keystore, print_response
 from util.txhandler import TxHandler
 
 STATUS_OK = 200
@@ -28,9 +28,10 @@ IGNORED_LIST = [
 
 class Audit(object):
 
-    def __init__(self, tx_handler: TxHandler, keystore):
+    def __init__(self, tx_handler: TxHandler, keystore, endpoint):
         self._tx_handler = tx_handler
         self._keystore = keystore
+        self._endpoint = endpoint
         self._method_handler = {
             'a': self.accept_score,
             'r': self.reject_score,
@@ -39,9 +40,11 @@ class Audit(object):
             'v': self.verify_contract
         }
 
-    @staticmethod
-    def get_pending_list():
-        url = "https://tracker.icon.foundation/v3/contract/pendingList?count=25"
+    def get_pending_list(self):
+        prefix = get_tracker_prefix(self._tx_handler.nid)
+        if prefix is None:
+            die('Cannot find tracker server')
+        url = f"{prefix}/v3/contract/pendingList?count=25"
         res = requests.get(url)
         ret = list()
         if STATUS_OK == res.status_code:
@@ -102,7 +105,8 @@ class Audit(object):
         url = "http://localhost:8888/v2/score/verify"
         headers = {'Content-Type': 'application/json'}
         _data = {
-            "deployTxHash": contract['createTx']
+            "deployTxHash": contract['createTx'],
+            "network": self._endpoint
         }
         try:
             res = requests.post(url, headers=headers, data=json.dumps(_data))
@@ -164,5 +168,5 @@ class Audit(object):
 
 def run(args):
     tx_handler = TxHandler(*get_icon_service(args.endpoint))
-    audit = Audit(tx_handler, args.keystore)
+    audit = Audit(tx_handler, args.keystore, args.endpoint)
     audit.run(args)

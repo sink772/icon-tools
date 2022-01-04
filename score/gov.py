@@ -78,7 +78,7 @@ class Governance(Score):
             "invoke": self.get_max_step_limit("invoke"),
             "query": self.get_max_step_limit("query")
         }
-        print_response('stepLimit', max_step_limits)
+        print_response('maxStepLimits', max_step_limits)
         print_response('stepCosts', self.get_step_costs())
         print_response('serviceConfig', self.get_service_config())
 

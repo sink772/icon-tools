@@ -20,10 +20,6 @@ from util import die, get_icon_service, get_tracker_prefix, load_keystore, print
 from util.txhandler import TxHandler
 
 STATUS_OK = 200
-IGNORED_LIST = [
-    "cx13f08df7106ae462c8358066e6d47bb68d995b6d",
-    "cx0000000000000000000000000000000000000001"
-]
 
 
 class Audit(object):
@@ -44,6 +40,10 @@ class Audit(object):
         prefix = get_tracker_prefix(self._tx_handler.nid)
         if prefix is None:
             die('Cannot find tracker server')
+        ignore_list = []
+        if self._endpoint == 'mainnet':
+            with open(".audit_ignore_list", "r") as f:
+                ignore_list = json.loads(f.read())
         url = f"{prefix}/v3/contract/pendingList?count=25"
         res = requests.get(url)
         ret = list()
@@ -54,7 +54,7 @@ class Audit(object):
             for i in range(count):
                 item = data[i]
                 address = item['contractAddr']
-                if address not in IGNORED_LIST:
+                if address not in ignore_list:
                     ret.append(item)
         return ret
 

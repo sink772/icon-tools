@@ -17,6 +17,7 @@ import json
 from score import Score
 from score.chain import ChainScore
 from util import die, print_response, get_icon_service, load_keystore
+from util.checks import address_type, tx_hash_type
 from util.txhandler import TxHandler
 
 
@@ -146,6 +147,24 @@ class Governance(Score):
                         self.accept_score(wallet, deploy_hash)
                     else:
                         self.reject_score(wallet, deploy_hash, reason)
+
+
+def add_parser(cmd, subparsers):
+    gov_parser = subparsers.add_parser('gov', help='Check governance status')
+    gov_parser.add_argument('--score-status', type=address_type, metavar='ADDRESS',
+                            help='show the given SCORE status')
+    gov_parser.add_argument('--accept-score', type=tx_hash_type, metavar='TX_HASH',
+                            help='accept the given deploy transaction')
+    gov_parser.add_argument('--accept-batch', type=str, metavar='CONTRACTS_JSON',
+                            help='accept multiple deploy transactions')
+    gov_parser.add_argument('--reject-score', type=tx_hash_type, metavar='TX_HASH',
+                            help='reject the given deploy transaction')
+    gov_parser.add_argument('--reject-batch', type=str, metavar='CONTRACTS_JSON',
+                            help='reject multiple deploy transactions')
+    gov_parser.add_argument('--reason', type=str, help='reason for rejecting')
+
+    # register method
+    setattr(cmd, 'gov', run)
 
 
 def run(args):

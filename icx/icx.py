@@ -17,6 +17,7 @@ from iconsdk.exception import JSONRPCException
 from iiss.stake import Stake
 from score.gov import Governance
 from util import die, in_icx, get_icon_service, get_address_from_keystore, print_response, load_keystore
+from util.checks import address_type
 from util.txhandler import TxHandler
 
 
@@ -88,6 +89,30 @@ class ICX(object):
         if confirm == 'y':
             return True
         return False
+
+
+def add_parser(cmd, subparsers):
+    # create a parser for 'balance' command
+    balance_parser = subparsers.add_parser('balance', help='Get ICX balance of given address')
+    balance_parser.add_argument('--address', type=address_type, help='target address to perform operations')
+    balance_parser.add_argument('--all', action='store_true', help='include the staked ICX')
+
+    # create a parser for 'transfer' command
+    transfer_parser = subparsers.add_parser('transfer', help='Transfer ICX to the given address')
+    transfer_parser.add_argument('--to', type=address_type, required=True, help='the recipient address')
+    transfer_parser.add_argument('--amount', type=int, help='the amount of ICX (in loop)')
+
+    # register methods
+    setattr(cmd, 'balance', balance)
+    setattr(cmd, 'transfer', transfer)
+
+
+def balance(args):
+    run('balance', args)
+
+
+def transfer(args):
+    run('transfer', args)
 
 
 def run(action, args):

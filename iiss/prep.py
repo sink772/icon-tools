@@ -17,6 +17,7 @@ from iconsdk.wallet.wallet import KeyWallet
 
 from score.chain import ChainScore
 from util import die, in_loop, print_response, get_icon_service, load_keystore
+from util.checks import address_type
 from util.txhandler import TxHandler
 
 
@@ -104,6 +105,17 @@ class PRep(object):
             tx_hash = self.set_delegation(prep, delegate_value)
             print(f"  [{prep.get_address()}] tx_hash={tx_hash}")
         self._tx_handler.ensure_tx_result(tx_hash)
+
+
+def add_parser(cmd, subparsers):
+    prep_parser = subparsers.add_parser('prep', help='P-Rep management')
+    prep_parser.add_argument('--register-test-preps', type=int, metavar='NUM',
+                             help='register NUM of P-Reps for testing')
+    prep_parser.add_argument('--get', type=address_type, metavar='ADDRESS', help='get P-Rep information')
+    prep_parser.add_argument('--get-preps', action='store_true', help='get all P-Reps information')
+
+    # register method
+    setattr(cmd, 'prep', run)
 
 
 def run(args):

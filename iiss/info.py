@@ -46,6 +46,14 @@ class Info(object):
         print_response('IISS Info', result)
 
 
+def add_parser(cmd, subparsers):
+    info_parser = subparsers.add_parser('info', help='Query IISS Information')
+    info_parser.add_argument('--next-term', action='store_true', help='show the remaining time to next term')
+
+    # register method
+    setattr(cmd, 'info', run)
+
+
 def run(args):
     tx_handler = TxHandler(*get_icon_service(args.endpoint))
     info = Info(tx_handler)

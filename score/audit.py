@@ -166,6 +166,15 @@ class Audit(object):
             print(f'[{i}] {version} {name}, {create_tx} - {address} - {create_date}')
 
 
+def add_parser(cmd, subparsers):
+    audit_parser = subparsers.add_parser('audit', help='Perform audit operations')
+    audit_parser.add_argument('--interactive', action='store_true', help='enter to interactive mode')
+    audit_parser.add_argument('--export', action='store_true', help='export pending list as json')
+
+    # register method
+    setattr(cmd, 'audit', run)
+
+
 def run(args):
     tx_handler = TxHandler(*get_icon_service(args.endpoint))
     audit = Audit(tx_handler, args.keystore, args.endpoint)

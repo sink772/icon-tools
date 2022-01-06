@@ -17,9 +17,9 @@ import argparse
 from iconsdk.exception import JSONRPCException
 
 from iiss.prep import PRep
-from run import address_type
 from score.chain import ChainScore
 from util import die, in_icx, print_response, get_icon_service, get_address_from_keystore, load_keystore
+from util.checks import address_type
 from util.txhandler import TxHandler
 
 
@@ -132,6 +132,15 @@ class Delegate(object):
         print('\n[Delegation]')
         print_response(address, result)
         print('DelegatedICX =', in_icx(int(result['totalDelegated'], 16)))
+
+
+def add_parser(cmd, subparsers):
+    delegate_parser = subparsers.add_parser('delegate', help='Query and set delegations')
+    delegate_parser.add_argument('--address', type=address_type, help='target address to perform operations')
+    delegate_parser.add_argument('--set', action='store_true', help='set new delegations')
+
+    # register method
+    setattr(cmd, 'delegate', run)
 
 
 def run(args):

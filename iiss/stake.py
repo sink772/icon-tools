@@ -18,6 +18,7 @@ from iiss.delegate import Delegate
 from iiss.iscore import IScore
 from score.chain import ChainScore
 from util import die, in_icx, in_loop, print_response, get_icon_service, get_address_from_keystore, load_keystore
+from util.checks import address_type
 from util.txhandler import TxHandler
 
 
@@ -165,6 +166,16 @@ class AutoStake(Stake):
         self._claim_iscore(wallet)
         self._set_stake(wallet, address, current_stake)
         self._set_delegations(wallet, address)
+
+
+def add_parser(cmd, subparsers):
+    stake_parser = subparsers.add_parser('stake', help='Query and set staking')
+    stake_parser.add_argument('--address', type=address_type, help='target address to perform operations')
+    stake_parser.add_argument('--set', action='store_true', help='set new staking amount')
+    stake_parser.add_argument('--auto', action='store_true', help='enable auto-staking')
+
+    # register method
+    setattr(cmd, 'stake', run)
 
 
 def run(args):

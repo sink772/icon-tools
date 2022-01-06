@@ -7,28 +7,6 @@ from iiss import iscore, stake, delegate, prep, info
 from score import gov, audit
 
 
-def address_type(string):
-    if isinstance(string, str) and len(string) == 42:
-        prefix = string[:2]
-        if prefix == "hx" or prefix == "cx":
-            body_bytes = bytes.fromhex(string[2:])
-            body = body_bytes.hex()
-            if str(string) == prefix + body:
-                return string
-    raise argparse.ArgumentTypeError(f"Invalid address: '{string}'")
-
-
-def tx_hash_type(string):
-    if isinstance(string, str) and len(string) == 66:
-        prefix = string[:2]
-        if prefix == "0x":
-            hash_bytes = bytes.fromhex(string[2:])
-            tx_hash = hash_bytes.hex()
-            if str(string) == prefix + tx_hash:
-                return string
-    raise argparse.ArgumentTypeError(f"Invalid txHash: '{string}'")
-
-
 class Command(object):
 
     def __init__(self):
@@ -42,100 +20,13 @@ class Command(object):
         subparsers.required = True
         subparsers.dest = 'command'
 
-        # create a parser for 'gov' command
-        gov_parser = subparsers.add_parser('gov', help='Check governance status')
-        gov_parser.add_argument('--score-status', type=address_type, metavar='ADDRESS',
-                                help='show the given SCORE status')
-        gov_parser.add_argument('--accept-score', type=tx_hash_type, metavar='TX_HASH',
-                                help='accept the given deploy transaction')
-        gov_parser.add_argument('--accept-batch', type=str, metavar='CONTRACTS_JSON',
-                                help='accept multiple deploy transactions')
-        gov_parser.add_argument('--reject-score', type=tx_hash_type, metavar='TX_HASH',
-                                help='reject the given deploy transaction')
-        gov_parser.add_argument('--reject-batch', type=str, metavar='CONTRACTS_JSON',
-                                help='reject multiple deploy transactions')
-        gov_parser.add_argument('--reason', type=str, help='reason for rejecting')
-
-        # create a parser for 'audit' command
-        audit_parser = subparsers.add_parser('audit', help='Perform audit operations')
-        audit_parser.add_argument('--interactive', action='store_true', help='enter to interactive mode')
-        audit_parser.add_argument('--export', action='store_true', help='export pending list as json')
-
-        # create a parser for 'balance' command
-        balance_parser = subparsers.add_parser('balance', help='Get ICX balance of given address')
-        balance_parser.add_argument('--address', type=address_type, help='target address to perform operations')
-        balance_parser.add_argument('--all', action='store_true', help='include the staked ICX')
-
-        # create a parser for 'transfer' command
-        balance_parser = subparsers.add_parser('transfer', help='Transfer ICX to the given address')
-        balance_parser.add_argument('--to', type=address_type, required=True, help='the recipient address')
-        balance_parser.add_argument('--amount', type=int, help='the amount of ICX (in loop)')
-
-        # create a parser for 'iscore' command
-        iscore_parser = subparsers.add_parser('iscore', help='Query and claim IScore')
-        iscore_parser.add_argument('--address', type=address_type, help='target address to perform operations')
-        iscore_parser.add_argument('--claim', action='store_true', help='claim the reward that has been received')
-
-        # create a parser for 'stake' command
-        stake_parser = subparsers.add_parser('stake', help='Query and set staking')
-        stake_parser.add_argument('--address', type=address_type, help='target address to perform operations')
-        stake_parser.add_argument('--set', action='store_true', help='set new staking amount')
-        stake_parser.add_argument('--auto', action='store_true', help='enable auto-staking')
-
-        # create a parser for 'delegate' command
-        delegate_parser = subparsers.add_parser('delegate', help='Query and set delegations')
-        delegate_parser.add_argument('--address', type=address_type, help='target address to perform operations')
-        delegate_parser.add_argument('--set', action='store_true', help='set new delegations')
-
-        # create a parser for 'info' command
-        info_parser = subparsers.add_parser('info', help='Query IISS Information')
-        info_parser.add_argument('--next-term', action='store_true', help='show the remaining time to next term')
-
-        # create a parser for 'prep' command
-        prep_parser = subparsers.add_parser('prep', help='P-Rep management')
-        prep_parser.add_argument('--register-test-preps', type=int, metavar='NUM',
-                                 help='register NUM of P-Reps for testing')
-        prep_parser.add_argument('--get', type=address_type, metavar='ADDRESS', help='get P-Rep information')
-        prep_parser.add_argument('--get-preps', action='store_true', help='get all P-Reps information')
+        # add subcommand parsers
+        modules = [gov, audit, icx, iscore, stake, delegate, info, prep]
+        for mod in modules:
+            mod.add_parser(self, subparsers)
 
         args = parser.parse_args()
         getattr(self, args.command)(args)
-
-    @staticmethod
-    def gov(args):
-        gov.run(args)
-
-    @staticmethod
-    def audit(args):
-        audit.run(args)
-
-    @staticmethod
-    def balance(args):
-        icx.run('balance', args)
-
-    @staticmethod
-    def transfer(args):
-        icx.run('transfer', args)
-
-    @staticmethod
-    def iscore(args):
-        iscore.run(args)
-
-    @staticmethod
-    def stake(args):
-        stake.run(args)
-
-    @staticmethod
-    def delegate(args):
-        delegate.run(args)
-
-    @staticmethod
-    def info(args):
-        info.run(args)
-
-    @staticmethod
-    def prep(args):
-        prep.run(args)
 
 
 if __name__ == "__main__":

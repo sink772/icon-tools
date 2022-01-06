@@ -14,6 +14,7 @@
 
 from score.chain import ChainScore
 from util import die, in_icx, print_response, get_icon_service, get_address_from_keystore, load_keystore
+from util.checks import address_type
 from util.txhandler import TxHandler
 
 
@@ -45,6 +46,15 @@ class IScore(object):
             result = self.query(address)
         print_response(address, result)
         print('EstimatedICX =', in_icx(int(result['estimatedICX'], 16)))
+
+
+def add_parser(cmd, subparsers):
+    iscore_parser = subparsers.add_parser('iscore', help='Query and claim IScore')
+    iscore_parser.add_argument('--address', type=address_type, help='target address to perform operations')
+    iscore_parser.add_argument('--claim', action='store_true', help='claim the reward that has been received')
+
+    # register method
+    setattr(cmd, 'iscore', run)
 
 
 def run(args):

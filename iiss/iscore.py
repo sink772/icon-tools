@@ -60,11 +60,10 @@ def add_parser(cmd, subparsers):
 def run(args):
     tx_handler = TxHandler(*get_icon_service(args.endpoint))
     iscore = IScore(tx_handler)
+    address = args.address
     if args.keystore:
         address = get_address_from_keystore(args.keystore)
-    elif args.address:
-        address = args.address
-    else:
+    if not address:
         die('Error: keystore or address should be specified')
     iscore.print_status(address)
     if args.claim:

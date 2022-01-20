@@ -43,6 +43,7 @@ class TxHandler:
             signed_tx = SignedTransaction(transaction, wallet, limit)
         else:
             estimated_step = self._icon_service.estimate_step(transaction)
+            estimated_step += 100_000  # add some margin
             signed_tx = SignedTransaction(transaction, wallet, estimated_step)
         return self._icon_service.send_transaction(signed_tx)
 

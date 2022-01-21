@@ -13,9 +13,12 @@
 # limitations under the License.
 
 from score import Score
+from score.token import IRC2Token
 from util import get_icon_service, get_address_from_keystore, die, print_response, load_keystore
 from util.checks import address_type
 from util.txhandler import TxHandler
+
+CFT_STAKING = 'cx2d86ce51600803e187ce769129d1f6442bcefb5b'
 
 
 class CraftReward(Score):
@@ -51,6 +54,7 @@ def add_parser(cmd, subparsers):
     cft_parser = subparsers.add_parser('cft', help='[SCORE] CraftNetwork')
     cft_parser.add_argument('--address', type=address_type, help='target address to perform operations')
     cft_parser.add_argument('--claim', action='store_true', help='claim rewards that has been received')
+    cft_parser.add_argument('--stake', action='store_true', help='stake CFT token')
 
     # register method
     setattr(cmd, 'cft', run)
@@ -58,14 +62,18 @@ def add_parser(cmd, subparsers):
 
 def run(args):
     tx_handler = TxHandler(*get_icon_service(args.endpoint))
-    cft = CraftReward(tx_handler)
-    address = args.address
-    if args.keystore:
-        address = get_address_from_keystore(args.keystore)
-    if not address:
-        die('Error: keystore or address should be specified')
-    print_response(address, cft.query_all_rewards(address))
-    if args.claim:
-        if not args.keystore:
-            die('Error: keystore should be specified to claim')
-        cft.ask_to_claim(args.keystore, args.password)
+    if args.stake:
+        token = IRC2Token(tx_handler, 'cft')
+        token.ask_to_transfer(args, CFT_STAKING)
+    else:
+        address = args.address
+        if args.keystore:
+            address = get_address_from_keystore(args.keystore)
+        if not address:
+            die('Error: keystore or address should be specified')
+        rewards = CraftReward(tx_handler)
+        print_response(address, rewards.query_all_rewards(address))
+        if args.claim:
+            if not args.keystore:
+                die('Error: keystore should be specified to claim')
+            rewards.ask_to_claim(args.keystore, args.password)

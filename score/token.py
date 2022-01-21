@@ -36,12 +36,14 @@ class IRC2Token(Score):
     def balance(self, address):
         return self.call("balanceOf", {"_owner": address})
 
-    def transfer(self, wallet, to, value, data=b''):
-        return self.invoke(wallet, 'transfer', {
+    def transfer(self, wallet, to, value, data=None):
+        param = {
             "_to": to,
-            "_value": value,
-            "_data": data
-        })
+            "_value": value
+        }
+        if data is not None:
+            param["_data"] = data
+        return self.invoke(wallet, 'transfer', param)
 
     def print_balance(self, address):
         bal = self.balance(address)

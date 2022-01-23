@@ -13,7 +13,7 @@
 # limitations under the License.
 
 from score import Score
-from util import get_icon_service, die, load_keystore, print_response
+from util import get_icon_service, die, load_keystore, print_response, in_icx
 from util.txhandler import TxHandler
 
 
@@ -30,7 +30,10 @@ class GBetSkill(Score):
         return self.invoke(wallet, 'claim_allocated_amt', {"nft_id": nft_id})
 
     def print_claim_amount(self, nft_id):
-        print_response(f'#{nft_id}', self.get_allocated_claim_amt(nft_id))
+        result = self.get_allocated_claim_amt(nft_id)
+        print_response(f'#{nft_id}', result)
+        total = int(result["total"], 16)
+        print(f'Total amount: {in_icx(total)} GBET')
 
     def ask_to_claim(self, keystore, nft_id):
         confirm = input('\n==> Are you sure you want to claim? (y/n) ')

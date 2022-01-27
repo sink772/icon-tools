@@ -36,7 +36,7 @@ class ICX(object):
             current_stake = int(result['stake'], 16)
             status['ICX (stake)'] = in_icx(current_stake)
             status['Total ICX  '] = in_icx(balance + current_stake)
-        print('\n[Balance]')
+        print('\n[ICX Balance]')
         print_response(address, status)
         return balance
 

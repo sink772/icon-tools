@@ -27,7 +27,8 @@ class IRC2Token(Score):
         'gbet': 'cx6139a27c15f1653471ffba0b4b88dc15de7e3267'
     }
 
-    def __init__(self, tx_handler: TxHandler, name):
+    def __init__(self, tx_handler: TxHandler, name: str):
+        self._name = name
         address = self.TOKEN_MAP.get(name)
         if not address:
             die(f'Error: supported tokens: {list(self.TOKEN_MAP.keys())}')
@@ -49,8 +50,8 @@ class IRC2Token(Score):
         bal = self.balance(address)
         price_in_loop = int(bal, 16)
         price_in_icx = in_icx(price_in_loop)
-        print(f'\n[Balance]')
-        print(f'"{bal}" ({price_in_loop}, {price_in_icx:.2f}) ')
+        print(f'\n[Token Balance]')
+        print(f'"{bal}" ({price_in_icx:.2f} {self._name.upper()})')
         return price_in_loop
 
     def ask_to_transfer(self, args, to):

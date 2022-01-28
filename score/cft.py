@@ -14,7 +14,7 @@
 
 from score import Score
 from score.token import IRC2Token
-from util import get_icon_service, get_address_from_keystore, die, print_response, load_keystore
+from util import get_icon_service, get_address_from_keystore, die, print_response, load_keystore, in_icx
 from util.checks import address_type
 from util.txhandler import TxHandler
 
@@ -33,14 +33,32 @@ class CraftReward(Score):
     def query_lp_rewards(self, address):
         return self.call("queryLpRewards", {"_address": address})
 
+    def query_staking_rewards(self, address):
+        return self.call("queryStakingRewards", {"_address": address})
+
     def claim_rewards(self, wallet):
         return self.invoke(wallet, 'claimRewards')
 
     def query_all_rewards(self, address):
+        liquidity = self.query_rewards(address)
+        lp_staking = self.query_lp_rewards(address)
+        cft_staking = self.query_staking_rewards(address)
         return {
-            'liquidity': self.query_rewards(address),
-            'lp_staking': self.query_lp_rewards(address)
+            'liquidity': self.to_int(liquidity, 'CFT'),
+            'lp_staking': self.to_int(lp_staking, 'CFT'),
+            'cft_staking': self.to_int(cft_staking, 'ICX')
         }
+
+    @staticmethod
+    def to_int(hex_str, symbol):
+        value = int(hex_str, 16)
+        if value == 0:
+            return "0"
+        return f'{value} ({in_icx(value):.4f} {symbol})'
+
+    def print_rewards(self, address):
+        print()
+        print_response('[Rewards]', self.query_all_rewards(address))
 
     def ask_to_claim(self, keystore, passwd):
         confirm = input('\n==> Are you sure you want to claim? (y/n) ')
@@ -62,18 +80,18 @@ def add_parser(cmd, subparsers):
 
 def run(args):
     tx_handler = TxHandler(*get_icon_service(args.endpoint))
+    address = args.address
+    if args.keystore:
+        address = get_address_from_keystore(args.keystore)
+    if not address:
+        die('Error: keystore or address should be specified')
+    token = IRC2Token(tx_handler, 'cft')
+    token.print_balance(address)
     if args.stake:
-        token = IRC2Token(tx_handler, 'cft')
         token.ask_to_transfer(args, CFT_STAKING)
-    else:
-        address = args.address
-        if args.keystore:
-            address = get_address_from_keystore(args.keystore)
-        if not address:
-            die('Error: keystore or address should be specified')
+    elif args.claim:
         rewards = CraftReward(tx_handler)
-        print_response(address, rewards.query_all_rewards(address))
-        if args.claim:
-            if not args.keystore:
-                die('Error: keystore should be specified to claim')
-            rewards.ask_to_claim(args.keystore, args.password)
+        rewards.print_rewards(address)
+        if not args.keystore:
+            die('Error: keystore should be specified to claim')
+        rewards.ask_to_claim(args.keystore, args.password)

@@ -42,8 +42,11 @@ class Audit(object):
             die('Cannot find tracker server')
         ignore_list = []
         if self._endpoint == 'mainnet':
-            with open(".audit_ignore_list", "r") as f:
-                ignore_list = json.loads(f.read())
+            try:
+                with open(".audit_ignore_list", "r") as f:
+                    ignore_list = json.loads(f.read())
+            except FileNotFoundError:
+                pass
         url = f"{prefix}/v3/contract/pendingList?count=25"
         res = requests.get(url)
         ret = list()

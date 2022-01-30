@@ -66,6 +66,7 @@ class StakedICXManager(Score):
 def add_parser(cmd, subparsers):
     sicx_parser = subparsers.add_parser('sicx', help='[SCORE] Staked ICX')
     sicx_parser.add_argument('--stake', action='store_true', help='stake the given ICX')
+    sicx_parser.add_argument('--swap', type=str, metavar='TOKEN_NAME', help='swap to target token')
 
     # register method
     setattr(cmd, 'sicx', run)
@@ -76,7 +77,12 @@ def run(args):
     if not args.keystore:
         die('Error: keystore should be specified to run')
     address = get_address_from_keystore(args.keystore)
-    token = IRC2Token(tx_handler, 'sicx')
-    token.print_balance(address)
+    sicx = IRC2Token(tx_handler, 'sicx')
+    if args.swap:
+        target = IRC2Token(tx_handler, args.swap)
+        target.print_balance(address)
+        sicx.swap(args, target.address)
+        return  # exit
+    sicx.print_balance(address)
     if args.stake:
         StakedICXManager(tx_handler).ask_to_stake(address, args.keystore, args.password)

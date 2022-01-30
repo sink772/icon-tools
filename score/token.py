@@ -13,6 +13,7 @@
 # limitations under the License.
 
 from score import Score
+from score.baln import BalancedDex
 from util import get_address_from_keystore, die, print_response, load_keystore, in_icx, get_icon_service
 from util.checks import address_type
 from util.txhandler import TxHandler
@@ -54,7 +55,7 @@ class IRC2Token(Score):
         print(f'"{bal}" ({price_in_icx:.2f} {self._name.upper()})')
         return price_in_loop
 
-    def ask_to_transfer(self, args, to):
+    def ask_to_transfer(self, args, to, to_token=None):
         if not args.keystore:
             die('Error: keystore should be specified')
         address = get_address_from_keystore(args.keystore)
@@ -71,8 +72,14 @@ class IRC2Token(Score):
         self.ensure_amount(amount, maximum)
         if self.ask_to_confirm(to, maximum, amount):
             wallet = load_keystore(args.keystore, args.password)
-            tx_hash = self.transfer(wallet, to, amount)
+            data = None
+            if to_token is not None and address_type(to_token) == to_token:
+                data = b'{"method":"_swap","params":{"toToken":"' + to_token.encode('utf-8') + b'"}}'
+            tx_hash = self.transfer(wallet, to, amount, data)
             self._tx_handler.ensure_tx_result(tx_hash, True)
+
+    def swap(self, args, to_token):
+        self.ask_to_transfer(args, BalancedDex.DEX_ADDRESS, to_token)
 
     @staticmethod
     def ensure_amount(amount, maximum):

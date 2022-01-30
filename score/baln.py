@@ -32,6 +32,12 @@ class BalancedDex(Score):
     def get_price(self, pool_id):
         return self.call("getPrice", {"_id": pool_id})
 
+    def get_pool_stats(self, pool_id):
+        return self.call("getPoolStats", {"_id": pool_id})
+
+    def get_pool_id(self, token1, token2):
+        return self.call("getPoolId", {'_token1Address': token1, '_token2Address': token2})
+
     def transfer(self, wallet, to, pool_id, value):
         return self.invoke(wallet, 'transfer', {
             '_to': to,
@@ -48,11 +54,28 @@ class BalancedDex(Score):
         print(f'"{bal}" ({price_in_loop}, {price_in_icx}) ')
         return price_in_loop
 
-    def print_pool_price(self, pool_id):
-        price = self.get_price(pool_id)
-        price_in_loop = int(price, 16)
-        price_in_icx = in_icx(price_in_loop)
-        print(f'"{price}" ({price_in_loop}, {price_in_icx}) ')
+    def print_pool_stats(self, pool_id):
+        stats = self.get_pool_stats(pool_id)
+        pool_name = stats['name']
+        price = int(stats['price'], 16)
+        base = int(stats['base'], 16)
+        quote = int(stats['quote'], 16)
+        base_name, quote_name = pool_name.split('/')
+
+        print()
+        print_response(pool_name, {
+            'price': f'{price} ({in_icx(price):.4f})',
+            'base': f'{base} ({in_icx(base):.2f} {base_name})',
+            'quote': f'{quote} ({in_icx(quote):.2f} {quote_name})'
+        })
+
+    def print_pool_id(self, token1, token2):
+        from score.token import IRC2Token
+        addr1 = IRC2Token(self._tx_handler, token1.lower()).address
+        addr2 = IRC2Token(self._tx_handler, token2.lower()).address
+        pool_id = int(self.get_pool_id(addr1, addr2), 16)
+        print(f'{token1}/{token2} = {pool_id}')
+        return pool_id
 
     def transfer_token(self, pool_id, args):
         if not args.keystore:
@@ -99,7 +122,8 @@ def add_parser(cmd, subparsers):
     baln_parser = subparsers.add_parser('baln', help='[SCORE] Balanced')
     baln_parser.add_argument('--address', type=address_type, help='target address to perform operations')
     baln_parser.add_argument('--balance', type=int, metavar='POOL_ID', help='get balance of the given pool id')
-    baln_parser.add_argument('--price', type=int, metavar='POOL_ID', help='get price of the given pool id')
+    baln_parser.add_argument('--pool_stats', type=int, metavar='POOL_ID', help='get pool stats of the given pool id')
+    baln_parser.add_argument('--pool_id', type=str, metavar='TOKEN_PAIR', help='get pool id of the given token pair')
     baln_parser.add_argument('--transfer', type=int, metavar='POOL_ID', help='transfer LP tokens to another address')
     baln_parser.add_argument('--to', type=address_type, help='the recipient address')
 
@@ -118,9 +142,13 @@ def run(args):
         if not address:
             die('Error: keystore or address should be specified')
         dex.print_balance(pool_id, address)
-    elif args.price:
-        pool_id = args.price
-        dex.print_pool_price(pool_id)
+    elif args.pool_stats:
+        pool_id = args.pool_stats
+        dex.print_pool_stats(pool_id)
+    elif args.pool_id:
+        token_pair = args.pool_id
+        token1, token2 = token_pair.split('/')
+        dex.print_pool_id(token1, token2)
     elif args.transfer:
         pool_id = args.transfer
         if not args.to:

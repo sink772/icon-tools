@@ -36,6 +36,10 @@ class IRC2Token(Score):
             die(f'Error: supported tokens: {list(self.TOKEN_MAP.keys())}')
         super().__init__(tx_handler, address)
 
+    @property
+    def name(self):
+        return self._name
+
     def balance(self, address):
         return self.call("balanceOf", {"_owner": address})
 
@@ -108,6 +112,7 @@ def add_parser(cmd, subparsers):
     token_parser.add_argument('--name', type=str, required=True, help='token name')
     token_parser.add_argument('--address', type=address_type, help='target address to perform operations')
     token_parser.add_argument('--transfer', type=address_type, metavar='TO', help='transfer token to the given address')
+    token_parser.add_argument('--swap', type=str, metavar='TOKEN_NAME', help='swap to target token')
 
     # register method
     setattr(cmd, 'token', run)
@@ -124,5 +129,13 @@ def run(args):
     if args.transfer:
         to = args.transfer
         token.ask_to_transfer(args, to)
+    elif args.swap:
+        token2 = args.swap
+        pool_id = BalancedDex(tx_handler).print_pool_id(token.name, token2)
+        if pool_id == 0:
+            die('Error: not supported pool')
+        target = IRC2Token(tx_handler, token2)
+        target.print_balance(address)
+        token.swap(args, target.address)
     else:
         token.print_balance(address)

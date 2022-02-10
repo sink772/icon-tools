@@ -26,6 +26,9 @@ class Info(object):
     def get_iiss_info(self):
         return self._chain.call("getIISSInfo")
 
+    def get_network_info(self):
+        return self._chain.call("getNetworkInfo")
+
     def print_next_term(self):
         result = self.get_iiss_info()
         current_block = int(result['blockHeight'], 16)
@@ -42,8 +45,8 @@ class Info(object):
         print_response('Remaining Time', time_left)
 
     def print_info(self):
-        result = self.get_iiss_info()
-        print_response('IISS Info', result)
+        print_response('IISS Info', self.get_iiss_info())
+        print_response('Network Info', self.get_network_info())
 
 
 def add_parser(cmd, subparsers):

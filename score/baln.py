@@ -51,7 +51,7 @@ class BalancedDex(Score):
         price_in_loop = int(bal, 16)
         price_in_icx = in_icx(price_in_loop)
         print('\n[Balance]')
-        print(f'"{bal}" ({price_in_loop}, {price_in_icx}) ')
+        print(f'{price_in_loop} ({price_in_icx:.4f})')
         return price_in_loop
 
     def print_pool_stats(self, pool_id):
@@ -122,8 +122,8 @@ def add_parser(cmd, subparsers):
     baln_parser = subparsers.add_parser('baln', help='[SCORE] Balanced')
     baln_parser.add_argument('--address', type=address_type, help='target address to perform operations')
     baln_parser.add_argument('--balance', type=int, metavar='POOL_ID', help='get balance of the given pool id')
-    baln_parser.add_argument('--pool_stats', type=int, metavar='POOL_ID', help='get pool stats of the given pool id')
-    baln_parser.add_argument('--pool_id', type=str, metavar='TOKEN_PAIR', help='get pool id of the given token pair')
+    baln_parser.add_argument('--pool-stats', type=int, metavar='POOL_ID', help='get pool stats of the given pool id')
+    baln_parser.add_argument('--pool-id', type=str, metavar='TOKEN_PAIR', help='get pool id of the given token pair')
     baln_parser.add_argument('--transfer', type=int, metavar='POOL_ID', help='transfer LP tokens to another address')
     baln_parser.add_argument('--to', type=address_type, help='the recipient address')
 

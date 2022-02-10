@@ -13,6 +13,8 @@
 # limitations under the License.
 
 import json
+from datetime import datetime
+
 import requests
 
 from score.gov import Governance
@@ -36,10 +38,7 @@ class Audit(object):
             'v': self.verify_contract
         }
 
-    def get_pending_list(self):
-        prefix = get_tracker_prefix(self._tx_handler.nid)
-        if prefix is None:
-            die('Cannot find tracker server')
+    def get_pending_list(self, prefix):
         ignore_list = []
         if self._endpoint == 'mainnet':
             try:
@@ -59,6 +58,23 @@ class Audit(object):
                 address = item['contractAddr']
                 if address not in ignore_list:
                     ret.append(item)
+        return ret
+
+    @staticmethod
+    def get_contract_list(prefix):
+        list_size, page = 0, 0
+        count = 90
+        ret = list()
+        while list_size == 0 or (page * count) < list_size:
+            page += 1
+            url = f"{prefix}/v3/contract/list?page={page}&count={count}&status=1"
+            res = requests.get(url)
+            if STATUS_OK == res.status_code:
+                content = json.loads(res.content)
+                data = content['data']
+                list_size = content['listSize']
+                ret.extend(data)
+        print("listSize =", list_size)
         return ret
 
     def accept_score(self, contract):
@@ -119,11 +135,20 @@ class Audit(object):
             die(f'Error: {e}')
 
     def run(self, args):
-        contracts = self.get_pending_list()
+        prefix = get_tracker_prefix(self._tx_handler.nid)
+        if prefix is None:
+            die('Cannot find tracker server')
+        if args.dump_java:
+            contracts = self.get_contract_list(prefix)
+        else:
+            contracts = self.get_pending_list(prefix)
         if len(contracts) == 0:
             die('No pending SCOREs')
 
-        if args.export:
+        if args.dump_java:
+            print("count =", len(contracts))
+            self.print_java_contracts(contracts)
+        elif args.export:
             print('{')
             for i, item in reversed(list(enumerate(contracts))):
                 version = item['version']
@@ -134,29 +159,27 @@ class Audit(object):
                 else:
                     print(f'    "{i}:{version}:{name}": "{address}"')
             print('}')
-            return
-
-        self.print_pending_contracts(contracts)
-
-        while args.interactive:
-            try:
-                num = input('\n==> Select: ')
-                if 0 <= int(num) < len(contracts):
-                    action = input('Action ([a]ccept, [r]eject, [s]tatus, [d]ownload, [v]erify: ')
-                    if len(action) == 1 and action in "ardvs":
-                        _handler = self._method_handler[action]
-                        if _handler(contracts[int(num)]):
-                            continue
-                        break
-                    raise ValueError(f'Error: invalid action: {action}')
-                else:
-                    raise ValueError(f'Error: invalid input: {num}')
-            except KeyboardInterrupt:
-                die('exit')
-            except ValueError as e:
-                print(e.__str__())
-                self.print_pending_contracts(contracts)
-                continue
+        else:
+            self.print_pending_contracts(contracts)
+            while args.interactive:
+                try:
+                    num = input('\n==> Select: ')
+                    if 0 <= int(num) < len(contracts):
+                        action = input('Action ([a]ccept, [r]eject, [s]tatus, [d]ownload, [v]erify: ')
+                        if len(action) == 1 and action in "ardvs":
+                            _handler = self._method_handler[action]
+                            if _handler(contracts[int(num)]):
+                                continue
+                            break
+                        raise ValueError(f'Error: invalid action: {action}')
+                    else:
+                        raise ValueError(f'Error: invalid input: {num}')
+                except KeyboardInterrupt:
+                    die('exit')
+                except ValueError as e:
+                    print(e.__str__())
+                    self.print_pending_contracts(contracts)
+                    continue
 
     @staticmethod
     def print_pending_contracts(contracts):
@@ -168,11 +191,26 @@ class Audit(object):
             create_date = item['createDate'].split('.')[0]
             print(f'[{i}] {version} {name}, {create_tx} - {address} - {create_date}')
 
+    def print_java_contracts(self, contracts):
+        results = {}
+        gov = Governance(self._tx_handler)
+        for i, item in enumerate(contracts):
+            verified_data = item['verifiedDate']
+            if datetime.fromisoformat(verified_data).year >= 2022:
+                name = item['contractName']
+                address = item['address']
+                status = gov.get_score_status(address)
+                current = status['current']
+                if current['deployTxHash'] == current['auditTxHash']:
+                    results[address] = f'{name}, {verified_data}'
+        print(json.dumps(results))
+
 
 def add_parser(cmd, subparsers):
     audit_parser = subparsers.add_parser('audit', help='Perform audit operations')
     audit_parser.add_argument('--interactive', action='store_true', help='enter to interactive mode')
     audit_parser.add_argument('--export', action='store_true', help='export pending list as json')
+    audit_parser.add_argument('--dump-java', action='store_true', help='dump Java contract list')
 
     # register method
     setattr(cmd, 'audit', run)

@@ -86,10 +86,11 @@ def run(args):
     if not address:
         die('Error: keystore or address should be specified')
     token = IRC2Token(tx_handler, 'cft')
-    token.print_balance(address)
     if args.stake:
         token.ask_to_transfer(args, CFT_STAKING)
-    elif args.claim:
+        return  # exit
+    token.print_balance(address)
+    if args.claim:
         rewards = CraftReward(tx_handler)
         rewards.print_rewards(address)
         if not args.keystore:

@@ -95,6 +95,9 @@ class TxHandler:
     def get_balance(self, address):
         return self._icon_service.get_balance(address)
 
+    def total_supply(self):
+        return self._icon_service.get_total_supply()
+
     def get_tx_result(self, tx_hash):
         return self._icon_service.get_transaction_result(tx_hash)
 

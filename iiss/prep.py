@@ -28,10 +28,7 @@ class PRep(object):
         self._chain = ChainScore(tx_handler)
 
     def get_prep(self, address):
-        params = {
-            "address": address
-        }
-        return self._chain.call("getPRep", params)
+        return self._chain.call("getPRep", {"address": address})
 
     def get_preps(self):
         return self._chain.call("getPReps")
@@ -40,21 +37,24 @@ class PRep(object):
         return self._chain.invoke(wallet, "registerPRep", params, value=in_loop(2000))
 
     def set_stake(self, wallet, amount):
-        params = {
-            "value": amount
-        }
-        return self._chain.invoke(wallet, "setStake", params)
+        return self._chain.invoke(wallet, "setStake", {"value": amount})
 
     def set_delegation(self, wallet, amount):
-        params = {
-            "delegations": [
-                {
-                    "address": wallet.get_address(),
-                    "value": amount
-                }
-            ]
-        }
-        return self._chain.invoke(wallet, "setDelegation", params)
+        return self._chain.invoke(wallet, "setDelegation", {
+            "delegations": [{
+                "address": wallet.get_address(),
+                "value": amount
+            }]})
+
+    def set_bond(self, wallet, amount):
+        return self._chain.invoke(wallet, "setBond", {
+            "bonds": [{
+                "address": wallet.get_address(),
+                "value": amount
+            }]})
+
+    def set_bonder_list(self, wallet, addresses: list):
+        return self._chain.invoke(wallet, "setBonderList", {"bonderList": addresses})
 
     def print_prep_info(self, prep_addr):
         print_response('P-Rep Info', self.get_prep(prep_addr))
@@ -68,15 +68,20 @@ class PRep(object):
 
     def register_test_preps(self, keystore, preps_num):
         god_wallet = load_keystore(keystore)
-        delegate_value = self._tx_handler.get_balance(god_wallet.get_address()) // 100_000
-        transfer_value = delegate_value + in_loop(3000)
-        test_preps = []
+        min_delegate_value = self._tx_handler.total_supply() // 500
+        print(f"min_delegate_value = ({min_delegate_value}, {min_delegate_value // 10**18})")
+        transfer_value = in_loop(105_000)
+        # add god wallet as the 1st prep
+        test_preps = [god_wallet]
+        delegates = [min_delegate_value]
         tx_hash = None
-        for i in range(preps_num):
+        for i in range(preps_num - 1):
             wallet = KeyWallet.create()
             test_preps.append(wallet)
+            delegates.append(in_loop(100_000))
             tx_hash = self._tx_handler.transfer(god_wallet, wallet.get_address(), transfer_value)
-        self._tx_handler.ensure_tx_result(tx_hash)
+        if tx_hash:
+            self._tx_handler.ensure_tx_result(tx_hash)
 
         print(f"registerPRep")
         for prep in test_preps:
@@ -95,15 +100,24 @@ class PRep(object):
         self._tx_handler.ensure_tx_result(tx_hash)
 
         print(f"setStake")
-        for prep in test_preps:
-            tx_hash = self.set_stake(prep, delegate_value)
+        for i, prep in enumerate(test_preps):
+            tx_hash = self.set_stake(prep, delegates[i])
             print(f"  [{prep.get_address()}] tx_hash={tx_hash}")
         self._tx_handler.ensure_tx_result(tx_hash)
 
         print(f"setDelegation")
-        for prep in test_preps:
-            tx_hash = self.set_delegation(prep, delegate_value)
+        for i, prep in enumerate(test_preps):
+            tx_hash = self.set_delegation(prep, delegates[i])
             print(f"  [{prep.get_address()}] tx_hash={tx_hash}")
+        self._tx_handler.ensure_tx_result(tx_hash)
+
+        print(f"setBond")
+        main_prep = test_preps[0]
+        bond_amount = in_loop(100_000)
+        self.set_stake(main_prep, min_delegate_value + bond_amount)
+        tx_hash = self.set_bonder_list(main_prep, [main_prep.get_address()])
+        self._tx_handler.ensure_tx_result(tx_hash)
+        tx_hash = self.set_bond(main_prep, bond_amount)
         self._tx_handler.ensure_tx_result(tx_hash)
 
 

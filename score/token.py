@@ -110,7 +110,7 @@ class IRC2Token(Score):
 
 
 def add_parser(cmd, subparsers):
-    token_parser = subparsers.add_parser('token', help='Token (IRC2) manipulation')
+    token_parser = subparsers.add_parser('token', help='Token (IRC2) operations')
     token_parser.add_argument('--name', type=str, required=True, help='token name')
     token_parser.add_argument('--address', type=address_type, help='target address to perform operations')
     token_parser.add_argument('--transfer', type=address_type, metavar='TO', help='transfer token to the given address')

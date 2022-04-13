@@ -40,13 +40,12 @@ class ICX(object):
         print_response(address, status)
         return balance
 
-    def transfer(self, address, args):
+    def transfer(self, address, to, args):
         balance = self.balance(address, False)
         tx_fee = self.get_default_tx_fee()
         maximum = balance - tx_fee
-        if args.amount:
-            amount = args.amount
-        else:
+        amount = args.amount
+        if not amount:
             value = input('\n==> Amount of transfer in loop (or [a]ll): ')
             try:
                 if len(value) == 1 and value == 'a':
@@ -56,9 +55,9 @@ class ICX(object):
             except ValueError:
                 die(f'Error: value should be integer')
         self.ensure_amount(amount, maximum)
-        if self.ask_to_confirm(args.to, balance, amount, tx_fee):
+        if self.ask_to_confirm(to, balance, amount, tx_fee):
             wallet = load_keystore(args.keystore, args.password)
-            tx_hash = self._tx_handler.transfer(wallet, args.to, amount)
+            tx_hash = self._tx_handler.transfer(wallet, to, amount)
             self._tx_handler.ensure_tx_result(tx_hash, True)
 
     def get_default_tx_fee(self):
@@ -92,41 +91,27 @@ class ICX(object):
 
 
 def add_parser(cmd, subparsers):
-    # create a parser for 'balance' command
-    balance_parser = subparsers.add_parser('balance', help='Get ICX balance of given address')
-    balance_parser.add_argument('--address', type=address_type, help='target address to perform operations')
-    balance_parser.add_argument('--all', action='store_true', help='include the staked ICX')
-
-    # create a parser for 'transfer' command
-    transfer_parser = subparsers.add_parser('transfer', help='Transfer ICX to the given address')
-    transfer_parser.add_argument('--to', type=address_type, required=True, help='the recipient address')
-    transfer_parser.add_argument('--amount', type=int, help='the amount of ICX (in loop)')
+    # create a parser for 'icx' command
+    icx_parser = subparsers.add_parser('icx', help='ICX operations')
+    icx_parser.add_argument('--address', type=address_type, help='target address to perform operations')
+    icx_parser.add_argument('--all', action='store_true', help='include the staked ICX')
+    icx_parser.add_argument('--transfer', type=address_type, metavar='TO', help='transfer to the given address')
+    icx_parser.add_argument('--amount', type=int, help='the amount of ICX (in loop)')
 
     # register methods
-    setattr(cmd, 'balance', balance)
-    setattr(cmd, 'transfer', transfer)
+    setattr(cmd, 'icx', run)
 
 
-def balance(args):
-    run('balance', args)
-
-
-def transfer(args):
-    run('transfer', args)
-
-
-def run(action, args):
+def run(args):
     tx_handler = TxHandler(*get_icon_service(args.endpoint))
     icx = ICX(tx_handler)
+    address = args.address
     if args.keystore:
         address = get_address_from_keystore(args.keystore)
-    elif action == 'balance' and args.address:
-        address = args.address
-    else:
+    if not address:
         die('Error: keystore or address should be specified')
-    if action == 'balance':
-        icx.balance(address, args.all)
-    elif action == 'transfer':
-        icx.transfer(address, args)
+    if args.transfer:
+        to = args.transfer
+        icx.transfer(address, to, args)
     else:
-        die('Error: unknown action')
+        icx.balance(address, args.all)

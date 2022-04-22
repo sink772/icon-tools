@@ -27,23 +27,15 @@ class Governance(Score):
     def __init__(self, tx_handler: TxHandler):
         super().__init__(tx_handler, self.GOV_ADDRESS)
 
-    def is_mainnet(self):
-        return self._tx_handler.nid == 0x1
-
-    def get_address(self):
-        if not self.is_mainnet():
-            return ChainScore.ADDRESS
-        else:
-            return self.GOV_ADDRESS
+    def gov_call(self, method, params=None):
+        return super().call(method, params)
 
     # override call implementation
     def call(self, method, params=None):
-        return self._tx_handler.call(self.get_address(), method, params)
+        return self._tx_handler.call(ChainScore.ADDRESS, method, params)
 
     def get_version(self):
-        if self.is_mainnet():
-            return self.call("getVersion")
-        return None
+        return self.gov_call("getVersion")
 
     def get_revision(self):
         return self.call("getRevision")
@@ -85,10 +77,7 @@ class Governance(Score):
 
     def check_if_audit_enabled(self):
         service_config = self.get_service_config()
-        if not self.is_mainnet():
-            return int(service_config, 16) & 0x2 != 0
-        else:
-            return service_config.get('AUDIT', 0) == '0x1'
+        return int(service_config, 16) & 0x2 != 0
 
     def check_if_tx_pending(self, tx_hash):
         result = self._tx_handler.get_tx_result(tx_hash)

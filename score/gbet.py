@@ -13,7 +13,8 @@
 # limitations under the License.
 
 from score import Score
-from util import get_icon_service, die, load_keystore, print_response, in_icx
+from score.token import IRC2Token
+from util import get_icon_service, die, load_keystore, print_response, in_icx, get_address_from_keystore
 from util.txhandler import TxHandler
 
 
@@ -34,6 +35,7 @@ class GBetSkill(Score):
         print_response(f'#{nft_id}', result)
         total = int(result["total"], 16)
         print(f'Total amount: {in_icx(total)} GBET')
+        return total
 
     def ask_to_claim(self, keystore, nft_id):
         confirm = input('\n==> Are you sure you want to claim? (y/n) ')
@@ -45,7 +47,6 @@ class GBetSkill(Score):
 
 def add_parser(cmd, subparsers):
     gbet_parser = subparsers.add_parser('gbet', help='[SCORE] GangstaBet')
-    gbet_parser.add_argument('--amount', type=int, metavar='NFT_ID', help='get the allocated GBET amount')
     gbet_parser.add_argument('--claim', type=int, metavar='NFT_ID', help='claim the allocated GBET amount')
 
     # register method
@@ -55,10 +56,14 @@ def add_parser(cmd, subparsers):
 def run(args):
     tx_handler = TxHandler(*get_icon_service(args.endpoint))
     gbet = GBetSkill(tx_handler)
-    nft_id = args.amount if args.amount else args.claim
-    if nft_id:
-        gbet.print_claim_amount(nft_id)
     if args.claim and args.claim > 0:
-        if not args.keystore:
-            die('Error: keystore should be specified')
-        gbet.ask_to_claim(args.keystore, args.claim)
+        nft_id = args.claim
+        amount = gbet.print_claim_amount(nft_id)
+        if amount > 0:
+            if not args.keystore:
+                die('Error: keystore should be specified')
+            gbet.ask_to_claim(args.keystore, nft_id)
+    elif args.keystore:
+        address = get_address_from_keystore(args.keystore)
+        token = IRC2Token(tx_handler, 'gbet')
+        token.print_balance(address)

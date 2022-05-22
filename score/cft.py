@@ -18,7 +18,26 @@ from util import get_icon_service, get_address_from_keystore, die, print_respons
 from util.checks import address_type
 from util.txhandler import TxHandler
 
-CFT_STAKING = 'cx2d86ce51600803e187ce769129d1f6442bcefb5b'
+
+class CraftStaking(Score):
+    CFT_STAKING = 'cx2d86ce51600803e187ce769129d1f6442bcefb5b'
+
+    def __init__(self, tx_handler: TxHandler):
+        super().__init__(tx_handler, self.CFT_STAKING)
+
+    def balance(self, address, _id):
+        return self.call("balanceOf", {"_owner": address, "_id": _id})
+
+    def print_balance(self, address):
+        bal = self.balance(address, 0x0)
+        price_in_loop = int(bal, 16)
+        price_in_icx = in_icx(price_in_loop)
+        print(f'\n[Staked]')
+        print(f'"{bal}" ({price_in_icx:.2f} CFT)')
+
+    def stake(self, address, token, args):
+        self.print_balance(address)
+        token.ask_to_transfer(args, self._address)
 
 
 class CraftReward(Score):
@@ -87,7 +106,7 @@ def run(args):
         die('Error: keystore or address should be specified')
     token = IRC2Token(tx_handler, 'cft')
     if args.stake:
-        token.ask_to_transfer(args, CFT_STAKING)
+        CraftStaking(tx_handler).stake(address, token, args)
         return  # exit
     token.print_balance(address)
     if args.claim:

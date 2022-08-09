@@ -34,10 +34,48 @@ class CraftStaking(Score):
         price_in_icx = in_icx(price_in_loop)
         print(f'\n[Staked]')
         print(f'"{bal}" ({price_in_icx:.2f} CFT)')
+        return price_in_loop
 
     def stake(self, address, token, args):
         self.print_balance(address)
         token.ask_to_transfer(args, self._address)
+
+    def unstake(self, wallet, value):
+        return self.invoke(wallet, 'unstake', {"_id": 0x0, "_value": value})
+
+    def ask_to_unstake(self, address, args):
+        maximum = self.print_balance(address)
+        amount = maximum
+        value = input('\n==> Amount of unstake in loop (or [a]ll): ')
+        try:
+            if len(value) == 1 and value == 'a':
+                pass
+            else:
+                amount = int(value)
+        except ValueError:
+            die(f'Error: value should be integer')
+        self.ensure_amount(amount, maximum)
+        print(f'amount: {amount} ({in_icx(amount)})')
+        confirm = input('\n==> Are you sure you want to unstake? (y/n) ')
+        if confirm == 'y':
+            wallet = load_keystore(args.keystore, args.password)
+            tx_hash = self.unstake(wallet, amount)
+            self._tx_handler.ensure_tx_result(tx_hash, True)
+
+    @staticmethod
+    def ensure_amount(amount, maximum):
+        if 0 < amount <= maximum:
+            return amount
+        die(f'Error: value should be 0 < (value) <= {maximum}')
+
+    def run(self, args, token):
+        if not args.keystore:
+            die('Error: keystore should be specified')
+        address = get_address_from_keystore(args.keystore)
+        if args.stake:
+            self.stake(address, token, args)
+        elif args.unstake:
+            self.ask_to_unstake(address, args)
 
 
 class CraftReward(Score):
@@ -55,8 +93,11 @@ class CraftReward(Score):
     def query_staking_rewards(self, address):
         return self.call("queryStakingRewards", {"_address": address})
 
-    def claim_rewards(self, wallet):
+    def claim_lp_rewards(self, wallet):
         return self.invoke(wallet, 'claimRewards')
+
+    def claim_staking_rewards(self, wallet):
+        return self.invoke(wallet, 'claimStakingRewards')
 
     def query_all_rewards(self, address):
         liquidity = self.query_rewards(address)
@@ -79,19 +120,31 @@ class CraftReward(Score):
         print()
         print_response('[Rewards]', self.query_all_rewards(address))
 
-    def ask_to_claim(self, keystore, passwd):
+    def ask_to_claim(self, args):
         confirm = input('\n==> Are you sure you want to claim? (y/n) ')
         if confirm == 'y':
-            wallet = load_keystore(keystore, passwd)
-            tx_hash = self.claim_rewards(wallet)
+            wallet = load_keystore(args.keystore, args.password)
+            if args.claim_lp:
+                tx_hash = self.claim_lp_rewards(wallet)
+            elif args.claim_staking:
+                tx_hash = self.claim_staking_rewards(wallet)
             self._tx_handler.ensure_tx_result(tx_hash, True)
+
+    def run(self, args):
+        if not args.keystore:
+            die('Error: keystore should be specified to claim')
+        address = get_address_from_keystore(args.keystore)
+        self.print_rewards(address)
+        self.ask_to_claim(args)
 
 
 def add_parser(cmd, subparsers):
     cft_parser = subparsers.add_parser('cft', help='[SCORE] CraftNetwork')
     cft_parser.add_argument('--address', type=address_type, help='target address to perform operations')
-    cft_parser.add_argument('--claim', action='store_true', help='claim rewards that has been received')
+    cft_parser.add_argument('--claim-lp', action='store_true', help='claim LP rewards')
+    cft_parser.add_argument('--claim-staking', action='store_true', help='claim staking rewards')
     cft_parser.add_argument('--stake', action='store_true', help='stake CFT token')
+    cft_parser.add_argument('--unstake', action='store_true', help='unstake CFT token')
 
     # register method
     setattr(cmd, 'cft', run)
@@ -105,13 +158,9 @@ def run(args):
     if not address:
         die('Error: keystore or address should be specified')
     token = IRC2Token(tx_handler, 'cft')
-    if args.stake:
-        CraftStaking(tx_handler).stake(address, token, args)
+    if args.stake or args.unstake:
+        CraftStaking(tx_handler).run(args, token)
         return  # exit
     token.print_balance(address)
-    if args.claim:
-        rewards = CraftReward(tx_handler)
-        rewards.print_rewards(address)
-        if not args.keystore:
-            die('Error: keystore should be specified to claim')
-        rewards.ask_to_claim(args.keystore, args.password)
+    if args.claim_lp or args.claim_staking:
+        CraftReward(tx_handler).run(args)

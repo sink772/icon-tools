@@ -5,6 +5,7 @@ import argparse
 from icx import icx
 from iiss import iscore, stake, delegate, prep, info
 from score import gov, audit, token, baln, sicx, cft, omm, gbet
+from util import inspect
 
 
 class Command(object):
@@ -21,7 +22,7 @@ class Command(object):
         subparsers.dest = 'command'
 
         # add subcommand parsers
-        modules = [gov, audit, icx, token, iscore, stake, delegate, info, prep, baln, sicx, cft, omm, gbet]
+        modules = [gov, audit, inspect, icx, token, iscore, stake, delegate, info, prep, baln, sicx, cft, omm, gbet]
         for mod in modules:
             mod.add_parser(self, subparsers)
 

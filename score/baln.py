@@ -60,14 +60,21 @@ class BalancedDex(Score):
         price = int(stats['price'], 16)
         base = int(stats['base'], 16)
         quote = int(stats['quote'], 16)
-        base_name, quote_name = pool_name.split('/')
-
-        print()
-        print_response(pool_name, {
-            'price': f'{price} ({in_icx(price):.4f})',
-            'base': f'{base} ({in_icx(base):.2f} {base_name})',
-            'quote': f'{quote} ({in_icx(quote):.2f} {quote_name})'
-        })
+        if pool_name is not None:
+            base_name, quote_name = pool_name.split('/')
+            print()
+            print_response(pool_name, {
+                'price': f'{price} ({in_icx(price):.4f})',
+                'base': f'{base} ({in_icx(base):.2f} {base_name})',
+                'quote': f'{quote} ({in_icx(quote):.2f} {quote_name})'
+            })
+        else:
+            print_response(pool_id, {
+                'price': f'{price} ({in_icx(price):.4f})',
+                'base': f'{base} ({in_icx(base):.2f})',
+                'quote': f'{quote} ({in_icx(quote):.2f})',
+                'stats': stats
+            })
 
     def print_pool_id(self, token1, token2):
         from score.token import IRC2Token

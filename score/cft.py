@@ -99,8 +99,11 @@ class CraftReward(Score):
             param = {'_isRestake': "0x1"}
         return self.invoke(wallet, 'claimRewards', param)
 
-    def claim_staking_rewards(self, wallet):
-        return self.invoke(wallet, 'claimStakingRewards')
+    def claim_staking_rewards(self, wallet, compound: bool):
+        param = None
+        if compound:
+            param = {'_isCompound': "0x1"}
+        return self.invoke(wallet, 'claimStakingRewards', param)
 
     def query_all_rewards(self, address):
         liquidity = self.query_rewards(address)
@@ -130,7 +133,7 @@ class CraftReward(Score):
             if args.claim_lp:
                 tx_hash = self.claim_lp_rewards(wallet, args.stake is True)
             elif args.claim_staking:
-                tx_hash = self.claim_staking_rewards(wallet)
+                tx_hash = self.claim_staking_rewards(wallet, args.stake is True)
             self._tx_handler.ensure_tx_result(tx_hash, True)
 
     def run(self, args, token):

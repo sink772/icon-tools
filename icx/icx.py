@@ -97,6 +97,7 @@ def add_parser(cmd, subparsers):
     icx_parser.add_argument('--all', action='store_true', help='include the staked ICX')
     icx_parser.add_argument('--transfer', type=address_type, metavar='TO', help='transfer to the given address')
     icx_parser.add_argument('--amount', type=int, help='the amount of ICX (in loop)')
+    icx_parser.add_argument('--private', action='store_true', help='show the private key')
 
     # register methods
     setattr(cmd, 'icx', run)
@@ -113,5 +114,8 @@ def run(args):
     if args.transfer:
         to = args.transfer
         icx.transfer(address, to, args)
+    elif args.private:
+        wallet = load_keystore(args.keystore, args.password)
+        print("private key =", wallet.get_private_key())
     else:
         icx.balance(address, args.all)

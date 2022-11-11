@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import re
+
 from iconsdk.exception import JSONRPCException
 from iconsdk.wallet.wallet import KeyWallet
 
@@ -33,7 +35,17 @@ class PRep(object):
     def get_preps(self):
         return self._chain.call("getPReps")
 
-    def register_prep(self, wallet, params):
+    def register_prep(self, wallet, name):
+        _id = re.sub('\\s+', '_', name.lower())
+        params = {
+            "name": name,
+            "country": "KOR",
+            "city": "Seoul",
+            "email": f"{_id}@example.com",
+            "website": f"https://{_id}.example.com",
+            "details": f"https://{_id}.example.com/details",
+            "p2pEndpoint": f"{_id}.example.com:7100",
+        }
         return self._chain.invoke(wallet, "registerPRep", params, value=in_loop(2000))
 
     def set_stake(self, wallet, amount):
@@ -66,6 +78,33 @@ class PRep(object):
     def is_test_endpoint(endpoint):
         return endpoint in ('local', 'gochain')
 
+    def register_named_prep(self, keystore, name):
+        wallet = load_keystore(keystore)
+        stake_amount = in_loop(1_000_000)
+        bond_amount = in_loop(100_000)
+
+        print(f"registerPRep")
+        tx_hash = self.register_prep(wallet, name)
+        print(f"  [{wallet.get_address()}] tx_hash={tx_hash}")
+        self._tx_handler.ensure_tx_result(tx_hash)
+
+        print(f"setStake")
+        tx_hash = self.set_stake(wallet, stake_amount)
+        print(f"  [{wallet.get_address()}] tx_hash={tx_hash}")
+        self._tx_handler.ensure_tx_result(tx_hash)
+
+        print(f"setDelegation")
+        tx_hash = self.set_delegation(wallet, (stake_amount - bond_amount))
+        print(f"  [{wallet.get_address()}] tx_hash={tx_hash}")
+        self._tx_handler.ensure_tx_result(tx_hash)
+
+        print(f"setBond")
+        tx_hash = self.set_bonder_list(wallet, [wallet.get_address()])
+        self._tx_handler.ensure_tx_result(tx_hash)
+        tx_hash = self.set_bond(wallet, bond_amount)
+        print(f"  [{wallet.get_address()}] tx_hash={tx_hash}")
+        self._tx_handler.ensure_tx_result(tx_hash)
+
     def register_test_preps(self, keystore, preps_num):
         god_wallet = load_keystore(keystore)
         min_delegate_value = self._tx_handler.total_supply() // 500
@@ -86,16 +125,7 @@ class PRep(object):
         print(f"registerPRep")
         for prep in test_preps:
             name = f"node_{prep.get_address()}"
-            params = {
-                "name": name,
-                "country": "KOR",
-                "city": "Seoul",
-                "email": f"{name}@example.com",
-                "website": f"https://{name}.example.com",
-                "details": f"https://{name}.example.com/details",
-                "p2pEndpoint": f"{name}.example.com:7100",
-            }
-            tx_hash = self.register_prep(prep, params)
+            tx_hash = self.register_prep(prep, name)
             print(f"  [{prep.get_address()}] tx_hash={tx_hash}")
         self._tx_handler.ensure_tx_result(tx_hash)
 
@@ -118,11 +148,14 @@ class PRep(object):
         tx_hash = self.set_bonder_list(main_prep, [main_prep.get_address()])
         self._tx_handler.ensure_tx_result(tx_hash)
         tx_hash = self.set_bond(main_prep, bond_amount)
+        print(f"  [{main_prep.get_address()}] tx_hash={tx_hash}")
         self._tx_handler.ensure_tx_result(tx_hash)
 
 
 def add_parser(cmd, subparsers):
     prep_parser = subparsers.add_parser('prep', help='P-Rep management')
+    prep_parser.add_argument('--register-prep', type=str, metavar='NAME',
+                             help='register P-Rep by NAME')
     prep_parser.add_argument('--register-test-preps', type=int, metavar='NUM',
                              help='register NUM of P-Reps for testing')
     prep_parser.add_argument('--get', type=address_type, metavar='ADDRESS', help='get P-Rep information')
@@ -146,6 +179,9 @@ def run(args):
             die(f'Error: {e}')
     if not args.keystore:
         die('Error: keystore should be specified')
+    if args.register_prep:
+        prep.register_named_prep(args.keystore, args.register_prep)
+        exit(0)
     preps_num = args.register_test_preps if args.register_test_preps else 0
     if 0 < preps_num <= 100:
         if prep.is_test_endpoint(args.endpoint):

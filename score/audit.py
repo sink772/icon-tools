@@ -138,14 +138,23 @@ class Audit(object):
         prefix = get_tracker_prefix(self._tx_handler.nid)
         if prefix is None:
             die('Cannot find tracker server')
-        if args.dump_java:
+        if args.dump_java or args.dump_contract:
             contracts = self.get_contract_list(prefix)
         else:
             contracts = self.get_pending_list(prefix)
         if len(contracts) == 0:
             die('No pending SCOREs')
 
-        if args.dump_java:
+        if args.dump_contract:
+            print("count =", len(contracts))
+            results = {}
+            for i, item in enumerate(contracts):
+                verified_data = item['verifiedDate']
+                name = item['contractName']
+                address = item['address']
+                results[address] = f'{name}, {verified_data}'
+            print(json.dumps(results))
+        elif args.dump_java:
             print("count =", len(contracts))
             self.print_java_contracts(contracts)
         elif args.export:
@@ -196,13 +205,17 @@ class Audit(object):
         gov = Governance(self._tx_handler)
         for i, item in enumerate(contracts):
             verified_data = item['verifiedDate']
-            if datetime.fromisoformat(verified_data).year >= 2022:
-                name = item['contractName']
-                address = item['address']
-                status = gov.get_score_status(address)
-                current = status['current']
-                if current['deployTxHash'] == current['auditTxHash']:
-                    results[address] = f'{name}, {verified_data}'
+            try:
+                if datetime.fromisoformat(verified_data).year >= 2022:
+                    name = item['contractName']
+                    address = item['address']
+                    status = gov.get_score_status(address)
+                    current = status['current']
+                    if current['deployTxHash'] == current['auditTxHash']:
+                        results[address] = f'{name}, {verified_data}'
+            except ValueError:
+                print("[ValueError]", item)
+
         print(json.dumps(results))
 
 
@@ -211,6 +224,7 @@ def add_parser(cmd, subparsers):
     audit_parser.add_argument('--interactive', action='store_true', help='enter to interactive mode')
     audit_parser.add_argument('--export', action='store_true', help='export pending list as json')
     audit_parser.add_argument('--dump-java', action='store_true', help='dump Java contract list')
+    audit_parser.add_argument('--dump-contract', action='store_true', help='dump active contract list')
 
     # register method
     setattr(cmd, 'audit', run)

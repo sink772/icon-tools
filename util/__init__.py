@@ -43,9 +43,10 @@ def get_icon_service(endpoint):
     endpoint_map = {
         "mainnet": ['https://ctz.solidwallet.io', 0x1],
         "lisbon":  ['https://lisbon.net.solidwallet.io', 0x2],
-        "sejong":  ['https://sejong.net.solidwallet.io', 0x53],
         "berlin":  ['https://berlin.net.solidwallet.io', 0x7],
-        "local":   ['http://localhost:9082', 0x3],
+        "gochain": ['http://localhost:9082', 0x3],
+        "icon0":   ['http://localhost:9080', 0x3],
+        "icon1":   ['http://localhost:9180', 0x101],
     }
     url, nid = endpoint_map.get(endpoint, [None, None])
     if not url:
@@ -57,11 +58,10 @@ def get_icon_service(endpoint):
 
 def get_tracker_prefix(nid):
     tracker_map = {
-        0x1: 'https://tracker.icon.foundation',
+        0x1: 'https://main.tracker.solidwallet.io',
         0x2: 'https://lisbon.tracker.solidwallet.io',
         0x3: 'http://localhost',
         0x7: 'https://berlin.tracker.solidwallet.io',
-        0x53: 'https://sejong.tracker.solidwallet.io',
     }
     return tracker_map.get(nid, None)
 

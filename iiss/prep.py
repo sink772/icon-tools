@@ -76,7 +76,7 @@ class PRep(object):
 
     @staticmethod
     def is_test_endpoint(endpoint):
-        return endpoint in ('local', 'gochain')
+        return endpoint in ('local', 'gochain', 'icon0', 'icon1')
 
     def register_named_prep(self, keystore, name):
         wallet = load_keystore(keystore)

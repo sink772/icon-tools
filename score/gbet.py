@@ -25,10 +25,10 @@ class GBetSkill(Score):
         super().__init__(tx_handler, self.SKILL_ADDRESS)
 
     def get_allocated_claim_amt(self, nft_id):
-        return self.call("get_allocated_claim_amt", {"nft_id": nft_id})
+        return self.call("getAllocatedClaimAmt", {"nftId": nft_id})
 
     def claim_allocated_amt(self, wallet, nft_id):
-        return self.invoke(wallet, 'claim_allocated_amt', {"nft_id": nft_id})
+        return self.invoke(wallet, 'claimAllocatedAmt', {"nftId": nft_id})
 
     def print_claim_amount(self, nft_id):
         result = self.get_allocated_claim_amt(nft_id)

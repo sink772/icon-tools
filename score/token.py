@@ -94,11 +94,10 @@ class IRC2Token(Score):
             return amount
         die(f'Error: value should be 0 < (value) <= {maximum}')
 
-    @staticmethod
-    def ask_to_confirm(address, balance, amount):
+    def ask_to_confirm(self, address, balance, amount):
         details = {
             "recipient": address,
-            "amount": f"{amount} ({in_icx(amount)})",
+            "amount": f"{amount} ({in_icx(amount)} {self._name.upper()})",
             "estimated balance after transfer": f"{in_icx(balance - amount)}"
         }
         print()

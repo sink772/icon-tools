@@ -93,6 +93,15 @@ class CraftReward(Score):
     def query_staking_rewards(self, address):
         return self.call("queryStakingRewards", {"_address": address})
 
+    def current_day(self):
+        return self.call("currentDay")
+
+    def last_claimed_day(self, address):
+        return self.call("lastClaimedDay", {"_address": address})
+
+    def last_converted_day(self):
+        return self.call("lastConvertedDay")
+
     def claim_lp_rewards(self, wallet, restake: bool):
         param = None
         if restake:
@@ -112,7 +121,7 @@ class CraftReward(Score):
         return {
             'liquidity': self.to_int(liquidity, 'CFT'),
             'lp_staking': self.to_int(lp_staking, 'CFT'),
-            'cft_staking': self.to_int(cft_staking, 'ICX')
+            'cft_staking': self.to_int(cft_staking, 'bnUSD')
         }
 
     @staticmethod
@@ -125,6 +134,11 @@ class CraftReward(Score):
     def print_rewards(self, address):
         print()
         print_response('[Rewards]', self.query_all_rewards(address))
+        last_claimed_day = int(self.last_claimed_day(address), 16)
+        current_day = int(self.current_day(), 16)
+        print('lastClaimedDay:', last_claimed_day)
+        print('lastConvertedDay:', int(self.last_converted_day(), 16))
+        print(f'currentDay: {current_day} (delta: {current_day - last_claimed_day})')
 
     def ask_to_claim(self, args):
         confirm = input('\n==> Are you sure you want to claim? (y/n) ')

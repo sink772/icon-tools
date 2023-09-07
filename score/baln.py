@@ -125,6 +125,23 @@ class BalancedDex(Score):
         return False
 
 
+class BalancedRewards(Score):
+    REWARDS_ADDRESS = "cx10d59e8103ab44635190bd4139dbfd682fa2d07e"
+
+    def __init__(self, tx_handler: TxHandler):
+        super().__init__(tx_handler, self.REWARDS_ADDRESS)
+
+    def claim_rewards(self, wallet):
+        return self.invoke(wallet, 'claimRewards')
+
+    def ask_to_claim(self, args):
+        if not args.keystore:
+            die('Error: keystore should be specified')
+        wallet = load_keystore(args.keystore, args.password)
+        tx_hash = self.claim_rewards(wallet)
+        self._tx_handler.ensure_tx_result(tx_hash, True)
+
+
 def add_parser(cmd, subparsers):
     baln_parser = subparsers.add_parser('baln', help='[SCORE] Balanced')
     baln_parser.add_argument('--address', type=address_type, help='target address to perform operations')
@@ -132,6 +149,7 @@ def add_parser(cmd, subparsers):
     baln_parser.add_argument('--pool-stats', type=int, metavar='POOL_ID', help='get pool stats of the given pool id')
     baln_parser.add_argument('--pool-id', type=str, metavar='TOKEN_PAIR', help='get pool id of the given token pair')
     baln_parser.add_argument('--transfer', type=int, metavar='POOL_ID', help='transfer LP tokens to another address')
+    baln_parser.add_argument('--claim-rewards', action='store_true', help='claim baln rewards')
     baln_parser.add_argument('--to', type=address_type, help='the recipient address')
 
     # register method
@@ -161,3 +179,5 @@ def run(args):
         if not args.to:
             die('Error: recipient address should be specified')
         dex.transfer_token(pool_id, args)
+    elif args.claim_rewards:
+        BalancedRewards(tx_handler).ask_to_claim(args)

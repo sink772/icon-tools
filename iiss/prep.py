@@ -151,6 +151,11 @@ class PRep(object):
         print(f"  [{main_prep.get_address()}] tx_hash={tx_hash}")
         self._tx_handler.ensure_tx_result(tx_hash)
 
+    def do_self_bond(self, keystore, amount):
+        wallet = load_keystore(keystore)
+        tx_hash = self.set_bond(wallet, in_loop(amount))
+        self._tx_handler.ensure_tx_result(tx_hash)
+
 
 def add_parser(cmd, subparsers):
     prep_parser = subparsers.add_parser('prep', help='P-Rep management')
@@ -158,6 +163,7 @@ def add_parser(cmd, subparsers):
                              help='register P-Rep by NAME')
     prep_parser.add_argument('--register-test-preps', type=int, metavar='NUM',
                              help='register NUM of P-Reps for testing')
+    prep_parser.add_argument('--self-bond', type=int, metavar='AMOUNT', help='the amount of self-bond in ICX')
     prep_parser.add_argument('--get', type=address_type, metavar='ADDRESS', help='get P-Rep information')
     prep_parser.add_argument('--get-preps', action='store_true', help='get all P-Reps information')
 
@@ -181,6 +187,9 @@ def run(args):
         die('Error: keystore should be specified')
     if args.register_prep:
         prep.register_named_prep(args.keystore, args.register_prep)
+        exit(0)
+    elif args.self_bond:
+        prep.do_self_bond(args.keystore, args.self_bond)
         exit(0)
     preps_num = args.register_test_preps if args.register_test_preps else 0
     if 0 < preps_num <= 100:

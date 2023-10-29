@@ -28,7 +28,7 @@ class StakedICXManager(Score):
     def stake_icx(self, wallet, to, value):
         return self.invoke(wallet, 'stakeICX', {'_to': to}, value=value)
 
-    def ask_to_stake(self, address, keystore, password):
+    def ask_to_stake(self, address, args):
         maximum = ICX(self._tx_handler).balance(address, False)
         amount = maximum
         value = input('\n==> Amount of transfer in loop: ')
@@ -38,7 +38,7 @@ class StakedICXManager(Score):
             die(f'Error: value should be integer')
         self.ensure_amount(amount, maximum)
         if self.ask_to_confirm(self.STAKING_MAN, maximum, amount):
-            wallet = load_keystore(keystore, password)
+            wallet = load_keystore(args.keystore, args.password)
             tx_hash = self.stake_icx(wallet, wallet.get_address(), amount)
             self._tx_handler.ensure_tx_result(tx_hash, True)
 
@@ -63,9 +63,35 @@ class StakedICXManager(Score):
         return False
 
 
+class StakedICX(IRC2Token):
+
+    def __init__(self, tx_handler: TxHandler):
+        super().__init__(tx_handler, 'sicx')
+
+    def ask_to_unstake(self, address, args):
+        _, maximum = self.balance(address)
+        amount = maximum
+        value = input('\n==> Amount of unstake in loop (or [a]ll): ')
+        try:
+            if len(value) == 1 and value == 'a':
+                pass
+            else:
+                amount = int(value)
+        except ValueError:
+            die(f'Error: value should be integer')
+        self.ensure_amount(amount, maximum)
+        to = StakedICXManager.STAKING_MAN
+        if self.ask_to_confirm(to, maximum, amount):
+            wallet = load_keystore(args.keystore, args.password)
+            data = b'{"method":"unstake"}'
+            tx_hash = self.transfer(wallet, to, amount, data)
+            self._tx_handler.ensure_tx_result(tx_hash, True)
+
+
 def add_parser(cmd, subparsers):
     sicx_parser = subparsers.add_parser('sicx', help='[SCORE] Staked ICX')
     sicx_parser.add_argument('--stake', action='store_true', help='stake the given ICX')
+    sicx_parser.add_argument('--unstake', action='store_true', help='unstake the given sICX')
 
     # register method
     setattr(cmd, 'sicx', run)
@@ -76,7 +102,9 @@ def run(args):
     if not args.keystore:
         die('Error: keystore should be specified to run')
     address = get_address_from_keystore(args.keystore)
-    sicx = IRC2Token(tx_handler, 'sicx')
+    sicx = StakedICX(tx_handler)
     sicx.print_balance(address)
     if args.stake:
-        StakedICXManager(tx_handler).ask_to_stake(address, args.keystore, args.password)
+        StakedICXManager(tx_handler).ask_to_stake(address, args)
+    elif args.unstake:
+        sicx.ask_to_unstake(address, args)

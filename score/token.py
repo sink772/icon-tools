@@ -43,7 +43,8 @@ class IRC2Token(Score):
         return self._name
 
     def balance(self, address):
-        return self.call("balanceOf", {"_owner": address})
+        hex_value = self.call("balanceOf", {"_owner": address})
+        return hex_value, int(hex_value, 16)
 
     def transfer(self, wallet, to, value, data=None):
         param = {
@@ -55,11 +56,10 @@ class IRC2Token(Score):
         return self.invoke(wallet, 'transfer', param)
 
     def print_balance(self, address):
-        bal = self.balance(address)
-        price_in_loop = int(bal, 16)
+        hex_value, price_in_loop = self.balance(address)
         price_in_icx = in_icx(price_in_loop)
         print(f'\n[Token Balance]')
-        print(f'"{bal}" ({price_in_icx:.2f} {self._name.upper()})')
+        print(f'"{hex_value}" ({price_in_icx:.2f} {self._name.upper()})')
         return price_in_loop
 
     def ask_to_transfer(self, args, to, to_token=None):

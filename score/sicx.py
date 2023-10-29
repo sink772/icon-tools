@@ -28,6 +28,15 @@ class StakedICXManager(Score):
     def stake_icx(self, wallet, to, value):
         return self.invoke(wallet, 'stakeICX', {'_to': to}, value=value)
 
+    def claim_unstaked_icx(self, wallet):
+        return self.invoke(wallet, 'claimUnstakedICX')
+
+    def claimable_icx(self, address):
+        return self.call('claimableICX', {'_address': address})
+
+    def user_unstake_info(self, address):
+        return self.call('getUserUnstakeInfo', {'_address': address})
+
     def ask_to_stake(self, address, args):
         maximum = ICX(self._tx_handler).balance(address, False)
         amount = maximum
@@ -41,6 +50,23 @@ class StakedICXManager(Score):
             wallet = load_keystore(args.keystore, args.password)
             tx_hash = self.stake_icx(wallet, wallet.get_address(), amount)
             self._tx_handler.ensure_tx_result(tx_hash, True)
+
+    def ask_to_claim(self, address, args):
+        value = self.print_claimable_icx(address)
+        if value > 0:
+            wallet = load_keystore(args.keystore, args.password)
+            tx_hash = self.claim_unstaked_icx(wallet)
+            self._tx_handler.ensure_tx_result(tx_hash, True)
+        else:
+            print("No claimable ICX")
+
+    def print_claimable_icx(self, address):
+        hex_value = self.claimable_icx(address)
+        price_in_loop = int(hex_value, 16)
+        price_in_icx = in_icx(price_in_loop)
+        print(f'\n[Claimable ICX]')
+        print(f'"{hex_value}" ({price_in_icx:.2f} ICX)')
+        return price_in_loop
 
     @staticmethod
     def ensure_amount(amount, maximum):
@@ -61,6 +87,14 @@ class StakedICXManager(Score):
         if confirm == 'y':
             return True
         return False
+
+    def get_unstake_info(self, address):
+        info = self.user_unstake_info(address)
+        if len(info) > 0:
+            print()
+            print_response('Unstake Info', info)
+        else:
+            print("No unstake info")
 
 
 class StakedICX(IRC2Token):
@@ -92,6 +126,8 @@ def add_parser(cmd, subparsers):
     sicx_parser = subparsers.add_parser('sicx', help='[SCORE] Staked ICX')
     sicx_parser.add_argument('--stake', action='store_true', help='stake the given ICX')
     sicx_parser.add_argument('--unstake', action='store_true', help='unstake the given sICX')
+    sicx_parser.add_argument('--claim', action='store_true', help='claim unstaked ICX')
+    sicx_parser.add_argument('--info', action='store_true', help='get unstake info')
 
     # register method
     setattr(cmd, 'sicx', run)
@@ -106,5 +142,9 @@ def run(args):
     sicx.print_balance(address)
     if args.stake:
         StakedICXManager(tx_handler).ask_to_stake(address, args)
+    elif args.claim:
+        StakedICXManager(tx_handler).ask_to_claim(address, args)
+    elif args.info:
+        StakedICXManager(tx_handler).get_unstake_info(address)
     elif args.unstake:
         sicx.ask_to_unstake(address, args)

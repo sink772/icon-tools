@@ -58,10 +58,10 @@ def get_icon_service(endpoint):
 
 def get_tracker_prefix(nid):
     tracker_map = {
-        0x1: 'https://main.tracker.solidwallet.io',
-        0x2: 'https://lisbon.tracker.solidwallet.io',
+        0x1: 'https://tracker.icon.community',
+        0x2: 'https://tracker.lisbon.icon.community',
         0x3: 'http://localhost',
-        0x7: 'https://berlin.tracker.solidwallet.io',
+        0x7: 'https://tracker.berlin.icon.community',
     }
     return tracker_map.get(nid, None)
 

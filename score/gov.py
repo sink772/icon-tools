@@ -64,9 +64,8 @@ class Governance(Score):
     def print_info(self):
         print('[Governance]')
         print_response('version', self.get_version())
-        print_response('revision', self.get_revision())
-        step_price = self.get_step_price()
-        print(f'"stepPrice": {step_price} ({int(step_price, 16)})')
+        print_response("revision", self.get_revision())
+        print_response("stepPrice", self.get_step_price())
         max_step_limits = {
             "invoke": self.get_max_step_limit("invoke"),
             "query": self.get_max_step_limit("query")

@@ -36,7 +36,15 @@ def in_loop(value):
 
 
 def print_response(header, msg):
-    print(f'"{header}": {json.dumps(msg, indent=4)}')
+    if isinstance(msg, str):
+        if msg.startswith("0x"):
+            print(f'"{header}": "{msg}" ({int(msg, 16)})')
+        else:
+            print(f'"{header}": "{msg}"')
+    elif isinstance(msg, dict):
+        print(f'"{header}": {json.dumps(msg, indent=4)}')
+    else:
+        print(f'"{header}": "{msg}"')
 
 
 def get_icon_service(endpoint):
@@ -44,7 +52,7 @@ def get_icon_service(endpoint):
         "mainnet": ['https://ctz.solidwallet.io', 0x1],
         "lisbon":  ['https://lisbon.net.solidwallet.io', 0x2],
         "berlin":  ['https://berlin.net.solidwallet.io', 0x7],
-        "gochain": ['http://localhost:9082', 0x3],
+        "local":   ['http://localhost:9082', 0x3],
         "icon0":   ['http://localhost:9080', 0x3],
         "icon1":   ['http://localhost:9180', 0x101],
     }

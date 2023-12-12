@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import argparse
 import re
 
 from iconsdk.exception import JSONRPCException
@@ -78,18 +79,28 @@ class PRep(object):
     def is_test_endpoint(endpoint):
         return endpoint in ('local', 'gochain', 'icon0', 'icon1')
 
-    def register_named_prep(self, keystore, name):
-        wallet = load_keystore(keystore)
-        stake_amount = in_loop(1_000_000)
+    def get_minimum_delegation(self):
+        min_delegate_value = self._tx_handler.total_supply() // 500
+        print(f"min_delegate_value = ({min_delegate_value}, {min_delegate_value // 10 ** 18})")
+        return min_delegate_value
+
+    def register_prep_by_keystore(self, god_keystore, keystore):
+        god_wallet = load_keystore(god_keystore)
+        wallet = load_keystore(keystore, 'gochain')
+        # transfer the required icx from the god wallet
+        stake_amount = self.get_minimum_delegation()
         bond_amount = in_loop(100_000)
+        tx_hash = self._tx_handler.transfer(god_wallet, wallet.get_address(), stake_amount * 2)
+        self._tx_handler.ensure_tx_result(tx_hash)
 
         print(f"registerPRep")
+        name = f"node_{wallet.get_address()[:16]}"
         tx_hash = self.register_prep(wallet, name)
         print(f"  [{wallet.get_address()}] tx_hash={tx_hash}")
         self._tx_handler.ensure_tx_result(tx_hash)
 
         print(f"setStake")
-        tx_hash = self.set_stake(wallet, stake_amount)
+        tx_hash = self.set_stake(wallet, stake_amount + bond_amount)
         print(f"  [{wallet.get_address()}] tx_hash={tx_hash}")
         self._tx_handler.ensure_tx_result(tx_hash)
 
@@ -107,8 +118,7 @@ class PRep(object):
 
     def register_test_preps(self, keystore, preps_num):
         god_wallet = load_keystore(keystore)
-        min_delegate_value = self._tx_handler.total_supply() // 500
-        print(f"min_delegate_value = ({min_delegate_value}, {min_delegate_value // 10**18})")
+        min_delegate_value = self.get_minimum_delegation()
         transfer_value = in_loop(105_000)
         # add god wallet as the 1st prep
         test_preps = [god_wallet]
@@ -159,8 +169,8 @@ class PRep(object):
 
 def add_parser(cmd, subparsers):
     prep_parser = subparsers.add_parser('prep', help='P-Rep management')
-    prep_parser.add_argument('--register-prep', type=str, metavar='NAME',
-                             help='register P-Rep by NAME')
+    prep_parser.add_argument('--register-prep', type=argparse.FileType('r'), metavar='KEYSTORE',
+                             help='register P-Rep by KEYSTORE')
     prep_parser.add_argument('--register-test-preps', type=int, metavar='NUM',
                              help='register NUM of P-Reps for testing')
     prep_parser.add_argument('--self-bond', type=int, metavar='AMOUNT', help='the amount of self-bond in ICX')
@@ -186,7 +196,7 @@ def run(args):
     if not args.keystore:
         die('Error: keystore should be specified')
     if args.register_prep:
-        prep.register_named_prep(args.keystore, args.register_prep)
+        prep.register_prep_by_keystore(args.keystore, args.register_prep)
         exit(0)
     elif args.self_bond:
         prep.do_self_bond(args.keystore, args.self_bond)

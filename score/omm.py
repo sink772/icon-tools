@@ -13,14 +13,12 @@
 # limitations under the License.
 
 from score import Score
-from util import get_icon_service
-from util.txhandler import TxHandler
 
 
 class OmmLendingPool(Score):
     LENDING_POOL = 'cxcb455f26a2c01c686fa7f30e1e3661642dd53c0d'
 
-    def __init__(self, tx_handler: TxHandler):
+    def __init__(self, tx_handler):
         super().__init__(tx_handler, self.LENDING_POOL)
 
     def claim_rewards(self, wallet):
@@ -43,7 +41,6 @@ def add_parser(cmd, subparsers):
 
 
 def run(args):
-    tx_handler = TxHandler(*get_icon_service(args.endpoint))
-    lending_pool = OmmLendingPool(tx_handler)
+    lending_pool = OmmLendingPool(args.txhandler)
     if args.claim:
         lending_pool.ask_to_claim(args.keystore)

@@ -14,9 +14,8 @@
 
 from score import Score
 from score.baln import BalancedDex
-from util import die, print_response, in_icx, get_icon_service
+from util import die, print_response, in_icx
 from util.checks import address_type
-from util.txhandler import TxHandler
 
 
 class IRC2Token(Score):
@@ -31,7 +30,7 @@ class IRC2Token(Score):
         'gbet': 'cx6139a27c15f1653471ffba0b4b88dc15de7e3267'
     }
 
-    def __init__(self, tx_handler: TxHandler, name: str):
+    def __init__(self, tx_handler, name: str):
         self._name = name
         address = self.TOKEN_MAP.get(name)
         if not address:
@@ -118,18 +117,17 @@ def add_parser(cmd, subparsers):
 
 
 def run(args):
-    tx_handler = TxHandler(*get_icon_service(args.endpoint))
-    token = IRC2Token(tx_handler, args.name)
+    token = IRC2Token(args.txhandler, args.name)
     address = args.address if args.address else args.keystore.address
     if args.transfer:
         to = args.transfer
         token.ask_to_transfer(args.keystore, to)
     elif args.swap:
         token2 = args.swap
-        pool_id = BalancedDex(tx_handler).print_pool_id(token.name, token2)
+        pool_id = BalancedDex(args.txhandler).print_pool_id(token.name, token2)
         if pool_id == 0:
             die('Error: not supported pool')
-        target = IRC2Token(tx_handler, token2)
+        target = IRC2Token(args.txhandler, token2)
         target.print_balance(address)
         token.swap(args.keystore, target.address)
     else:

@@ -16,9 +16,8 @@ from iconsdk.exception import JSONRPCException
 
 from iiss.stake import Stake
 from score.gov import Governance
-from util import die, in_icx, get_icon_service, print_response
+from util import die, in_icx, print_response
 from util.checks import address_type
-from util.txhandler import TxHandler
 
 
 class ICX(object):
@@ -103,8 +102,7 @@ def add_parser(cmd, subparsers):
 
 
 def run(args):
-    tx_handler = TxHandler(*get_icon_service(args.endpoint))
-    icx = ICX(tx_handler)
+    icx = ICX(args.txhandler)
     address = args.address if args.address else args.keystore.address
     if args.transfer:
         to = args.transfer

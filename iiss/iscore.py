@@ -13,9 +13,8 @@
 # limitations under the License.
 
 from score.chain import ChainScore
-from util import in_icx, print_response, get_icon_service
+from util import in_icx, print_response
 from util.checks import address_type
-from util.txhandler import TxHandler
 
 
 class IScore(object):
@@ -58,8 +57,7 @@ def add_parser(cmd, subparsers):
 
 
 def run(args):
-    tx_handler = TxHandler(*get_icon_service(args.endpoint))
-    iscore = IScore(tx_handler)
+    iscore = IScore(args.txhandler)
     address = args.address if args.address else args.keystore.address
     iscore.print_status(address)
     if args.claim:

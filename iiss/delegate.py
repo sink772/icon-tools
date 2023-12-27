@@ -18,9 +18,8 @@ from iconsdk.exception import JSONRPCException
 
 from iiss.prep import PRep
 from score.chain import ChainScore
-from util import die, in_icx, print_response, get_icon_service
+from util import die, in_icx, print_response
 from util.checks import address_type
-from util.txhandler import TxHandler
 
 
 class Delegate(object):
@@ -144,8 +143,7 @@ def add_parser(cmd, subparsers):
 
 
 def run(args):
-    tx_handler = TxHandler(*get_icon_service(args.endpoint))
-    delegate = Delegate(tx_handler)
+    delegate = Delegate(args.txhandler)
     address = args.address if args.address else args.keystore.address
     result = delegate.query(address)
     delegate.print_status(address, result)

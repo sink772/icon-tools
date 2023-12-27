@@ -14,14 +14,13 @@
 
 from score import Score
 from score.token import IRC2Token
-from util import get_icon_service, print_response, in_icx
-from util.txhandler import TxHandler
+from util import print_response, in_icx
 
 
 class GBetSkill(Score):
     SKILL_ADDRESS = "cx2dc662031f3d62bcdba4f63e9bf827767c847565"
 
-    def __init__(self, tx_handler: TxHandler):
+    def __init__(self, tx_handler):
         super().__init__(tx_handler, self.SKILL_ADDRESS)
 
     def get_allocated_claim_amt(self, nft_id):
@@ -54,14 +53,13 @@ def add_parser(cmd, subparsers):
 
 
 def run(args):
-    tx_handler = TxHandler(*get_icon_service(args.endpoint))
-    gbet = GBetSkill(tx_handler)
     if args.claim and args.claim > 0:
+        gbet = GBetSkill(args.txhandler)
         nft_id = args.claim
         amount = gbet.print_claim_amount(nft_id)
         if amount > 0:
             gbet.ask_to_claim(args.keystore, nft_id)
     else:
+        token = IRC2Token(args.txhandler, 'gbet')
         address = args.keystore.address
-        token = IRC2Token(tx_handler, 'gbet')
         token.print_balance(address)

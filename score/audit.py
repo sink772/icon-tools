@@ -18,7 +18,7 @@ from datetime import datetime
 import requests
 
 from score.gov import Governance
-from util import die, get_icon_service, get_tracker_prefix, print_response
+from util import die, get_tracker_prefix, print_response
 from util.txhandler import TxHandler
 
 STATUS_OK = 200
@@ -227,6 +227,5 @@ def add_parser(cmd, subparsers):
 
 
 def run(args):
-    tx_handler = TxHandler(*get_icon_service(args.endpoint))
-    audit = Audit(tx_handler, args.keystore, args.endpoint)
+    audit = Audit(args.txhandler, args.keystore, args.endpoint)
     audit.run(args)

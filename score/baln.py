@@ -15,15 +15,14 @@
 import json
 
 from score import Score
-from util import get_icon_service, die, print_response, in_icx
+from util import die, print_response, in_icx
 from util.checks import address_type
-from util.txhandler import TxHandler
 
 
 class BalancedDex(Score):
     DEX_ADDRESS = "cxa0af3165c08318e988cb30993b3048335b94af6c"
 
-    def __init__(self, tx_handler: TxHandler):
+    def __init__(self, tx_handler):
         super().__init__(tx_handler, self.DEX_ADDRESS)
 
     def balance(self, pool_id, address):
@@ -126,7 +125,7 @@ class BalancedDex(Score):
 class BalancedRewards(Score):
     REWARDS_ADDRESS = "cx10d59e8103ab44635190bd4139dbfd682fa2d07e"
 
-    def __init__(self, tx_handler: TxHandler):
+    def __init__(self, tx_handler):
         super().__init__(tx_handler, self.REWARDS_ADDRESS)
 
     def claim_rewards(self, wallet):
@@ -153,8 +152,7 @@ def add_parser(cmd, subparsers):
 
 
 def run(args):
-    tx_handler = TxHandler(*get_icon_service(args.endpoint))
-    dex = BalancedDex(tx_handler)
+    dex = BalancedDex(args.txhandler)
     if args.balance:
         pool_id = args.balance
         address = args.address if args.address else args.keystore.address
@@ -172,4 +170,4 @@ def run(args):
             die('Error: recipient address should be specified')
         dex.transfer_token(pool_id, args.to, args.keystore)
     elif args.claim_rewards:
-        BalancedRewards(tx_handler).ask_to_claim(args.keystore)
+        BalancedRewards(args.txhandler).ask_to_claim(args.keystore)

@@ -17,9 +17,8 @@ from time import sleep
 from iiss.delegate import Delegate
 from iiss.iscore import IScore
 from score.chain import ChainScore
-from util import die, in_icx, in_loop, print_response, get_icon_service
+from util import die, in_icx, in_loop, print_response
 from util.checks import address_type
-from util.txhandler import TxHandler
 
 
 class Stake(object):
@@ -178,15 +177,14 @@ def add_parser(cmd, subparsers):
 
 
 def run(args):
-    tx_handler = TxHandler(*get_icon_service(args.endpoint))
-    stake = Stake(tx_handler)
+    stake = Stake(args.txhandler)
     address = args.address if args.address else args.keystore.address
     result = stake.query(address)
     current_stake = int(result['stake'], 16)
     stake.print_status(address, result)
     if args.set:
         if args.auto:
-            AutoStake(tx_handler).run(address, current_stake, args.keystore)
+            AutoStake(args.txhandler).run(address, current_stake, args.keystore)
         else:
             stake.ask_to_set(address, current_stake, args.keystore)
     elif args.auto:

@@ -5,8 +5,9 @@ import argparse
 from icx import icx
 from iiss import iscore, stake, delegate, prep, info
 from score import gov, audit, token, baln, sicx, cft, omm, gbet
-from util import inspect
+from util import inspect, get_icon_service
 from util.keystore import Keystore
+from util.txhandler import TxHandler
 
 
 class Command(object):
@@ -28,6 +29,7 @@ class Command(object):
             mod.add_parser(self, subparsers)
 
         args = parser.parse_args()
+        setattr(args, 'txhandler', TxHandler(*get_icon_service(args.endpoint)))
         setattr(args, 'keystore', Keystore(args.keystore, args.password))
         getattr(self, args.command)(args)
 

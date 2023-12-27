@@ -19,13 +19,12 @@ import tempfile
 import zipfile
 
 from score.gov import Governance
-from util import die, get_icon_service
-from util.txhandler import TxHandler
+from util import die
 
 
 class Inspect(object):
 
-    def __init__(self, tx_handler: TxHandler, keystore, endpoint):
+    def __init__(self, tx_handler, keystore, endpoint):
         self._tx_handler = tx_handler
         self._keystore = keystore
         self._endpoint = endpoint
@@ -103,8 +102,7 @@ def add_parser(cmd, subparsers):
 
 
 def run(args):
-    tx_handler = TxHandler(*get_icon_service(args.endpoint))
-    inspect = Inspect(tx_handler, args.keystore, args.endpoint)
+    inspect = Inspect(args.txhandler, args.keystore, args.endpoint)
     json_file = args.download
     if json_file:
         inspect.download_contract(json_file)

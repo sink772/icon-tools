@@ -15,14 +15,13 @@
 import time
 
 from score.chain import ChainScore
-from util import print_response, get_icon_service, die
-from util.txhandler import TxHandler
+from util import print_response, die
 
 
 class Info(object):
 
     def __init__(self, tx_handler):
-        self._tx_handler: TxHandler = tx_handler
+        self._tx_handler = tx_handler
         self._chain = ChainScore(tx_handler)
 
     def get_iiss_info(self):
@@ -65,8 +64,7 @@ def add_parser(cmd, subparsers):
 
 
 def run(args):
-    tx_handler = TxHandler(*get_icon_service(args.endpoint))
-    info = Info(tx_handler)
+    info = Info(args.txhandler)
     if args.next_term:
         info.print_next_term()
     elif args.end_block:

@@ -19,16 +19,15 @@ from iconsdk.exception import JSONRPCException
 from iconsdk.wallet.wallet import KeyWallet
 
 from score.chain import ChainScore
-from util import die, in_loop, print_response, get_icon_service
+from util import die, in_loop, print_response
 from util.checks import address_type
 from util.keystore import Keystore
-from util.txhandler import TxHandler
 
 
 class PRep(object):
 
     def __init__(self, tx_handler):
-        self._tx_handler: TxHandler = tx_handler
+        self._tx_handler = tx_handler
         self._chain = ChainScore(tx_handler)
 
     def get_prep(self, address):
@@ -183,8 +182,7 @@ def add_parser(cmd, subparsers):
 
 
 def run(args):
-    tx_handler = TxHandler(*get_icon_service(args.endpoint))
-    prep = PRep(tx_handler)
+    prep = PRep(args.txhandler)
     if args.get or args.get_preps:
         try:
             if args.get:

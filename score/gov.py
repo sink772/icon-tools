@@ -16,15 +16,14 @@ import json
 
 from score import Score
 from score.chain import ChainScore
-from util import die, print_response, get_icon_service
+from util import die, print_response
 from util.checks import address_type, tx_hash_type
-from util.txhandler import TxHandler
 
 
 class Governance(Score):
     GOV_ADDRESS = "cx0000000000000000000000000000000000000001"
 
-    def __init__(self, tx_handler: TxHandler):
+    def __init__(self, tx_handler):
         super().__init__(tx_handler, self.GOV_ADDRESS)
 
     def gov_call(self, method, params=None):
@@ -156,8 +155,7 @@ def add_parser(cmd, subparsers):
 
 
 def run(args):
-    tx_handler = TxHandler(*get_icon_service(args.endpoint))
-    gov = Governance(tx_handler)
+    gov = Governance(args.txhandler)
     tx_hash = args.accept_score if args.accept_score else args.reject_score
     json_file = args.accept_batch if args.accept_batch else args.reject_batch
     if args.score_status:

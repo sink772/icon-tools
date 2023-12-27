@@ -15,14 +15,13 @@
 from icx.icx import ICX
 from score import Score
 from score.token import IRC2Token
-from util import get_icon_service, die, in_icx, print_response
-from util.txhandler import TxHandler
+from util import die, in_icx, print_response
 
 
 class StakedICXManager(Score):
     STAKING_MAN = 'cx43e2eec79eb76293c298f2b17aec06097be606e0'
 
-    def __init__(self, tx_handler: TxHandler):
+    def __init__(self, tx_handler):
         super().__init__(tx_handler, self.STAKING_MAN)
 
     def stake_icx(self, wallet, to, value):
@@ -99,7 +98,7 @@ class StakedICXManager(Score):
 
 class StakedICX(IRC2Token):
 
-    def __init__(self, tx_handler: TxHandler):
+    def __init__(self, tx_handler):
         super().__init__(tx_handler, 'sicx')
 
     def ask_to_unstake(self, address, keystore):
@@ -134,15 +133,14 @@ def add_parser(cmd, subparsers):
 
 
 def run(args):
-    tx_handler = TxHandler(*get_icon_service(args.endpoint))
-    sicx = StakedICX(tx_handler)
+    sicx = StakedICX(args.txhandler)
     address = args.keystore.address
     sicx.print_balance(address)
     if args.stake:
-        StakedICXManager(tx_handler).ask_to_stake(address, args.keystore)
+        StakedICXManager(args.txhandler).ask_to_stake(address, args.keystore)
     elif args.claim:
-        StakedICXManager(tx_handler).ask_to_claim(address, args.keystore)
+        StakedICXManager(args.txhandler).ask_to_claim(address, args.keystore)
     elif args.info:
-        StakedICXManager(tx_handler).get_unstake_info(address)
+        StakedICXManager(args.txhandler).get_unstake_info(address)
     elif args.unstake:
         sicx.ask_to_unstake(address, args.keystore)

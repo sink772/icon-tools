@@ -14,15 +14,14 @@
 
 from score import Score
 from score.token import IRC2Token
-from util import get_icon_service, die, print_response, in_icx
+from util import die, print_response, in_icx
 from util.checks import address_type
-from util.txhandler import TxHandler
 
 
 class CraftStaking(Score):
     CFT_STAKING = 'cx2d86ce51600803e187ce769129d1f6442bcefb5b'
 
-    def __init__(self, tx_handler: TxHandler):
+    def __init__(self, tx_handler):
         super().__init__(tx_handler, self.CFT_STAKING)
 
     def balance(self, address, _id):
@@ -79,7 +78,7 @@ class CraftStaking(Score):
 class CraftReward(Score):
     REWARD_ADDRESS = "cx7ecb16e4c143b95e01d05933c17cb986cfe618e6"
 
-    def __init__(self, tx_handler: TxHandler):
+    def __init__(self, tx_handler):
         super().__init__(tx_handler, self.REWARD_ADDRESS)
 
     def query_rewards(self, address):
@@ -168,12 +167,11 @@ def add_parser(cmd, subparsers):
 
 
 def run(args):
-    tx_handler = TxHandler(*get_icon_service(args.endpoint))
-    token = IRC2Token(tx_handler, 'cft')
+    token = IRC2Token(args.txhandler, 'cft')
     if args.claim_lp or args.claim_staking:
-        CraftReward(tx_handler).run(args, token)
+        CraftReward(args.txhandler).run(args, token)
     elif args.stake or args.unstake:
-        CraftStaking(tx_handler).run(args, token)
+        CraftStaking(args.txhandler).run(args, token)
     else:
         address = args.address if args.address else args.keystore.address
         token.print_balance(address)

@@ -14,7 +14,7 @@
 
 from score import Score
 from score.baln import BalancedDex
-from util import get_address_from_keystore, die, print_response, load_keystore, in_icx, get_icon_service
+from util import die, print_response, in_icx, get_icon_service
 from util.checks import address_type
 from util.txhandler import TxHandler
 
@@ -62,10 +62,8 @@ class IRC2Token(Score):
         print(f'"{hex_value}" ({price_in_icx:.2f} {self._name.upper()})')
         return price_in_loop
 
-    def ask_to_transfer(self, args, to, to_token=None):
-        if not args.keystore:
-            die('Error: keystore should be specified')
-        address = get_address_from_keystore(args.keystore)
+    def ask_to_transfer(self, keystore, to, to_token=None):
+        address = keystore.address
         maximum = self.print_balance(address)
         amount = maximum
         value = input('\n==> Amount of transfer in loop (or [a]ll): ')
@@ -78,15 +76,15 @@ class IRC2Token(Score):
             die(f'Error: value should be integer')
         self.ensure_amount(amount, maximum)
         if self.ask_to_confirm(to, maximum, amount):
-            wallet = load_keystore(args.keystore, args.password)
+            wallet = keystore.get_wallet()
             data = None
             if to_token is not None and address_type(to_token) == to_token:
                 data = b'{"method":"_swap","params":{"toToken":"' + to_token.encode('utf-8') + b'"}}'
             tx_hash = self.transfer(wallet, to, amount, data)
             self._tx_handler.ensure_tx_result(tx_hash, True)
 
-    def swap(self, args, to_token):
-        self.ask_to_transfer(args, BalancedDex.DEX_ADDRESS, to_token)
+    def swap(self, keystore, to_token):
+        self.ask_to_transfer(keystore, BalancedDex.DEX_ADDRESS, to_token)
 
     @staticmethod
     def ensure_amount(amount, maximum):
@@ -122,14 +120,10 @@ def add_parser(cmd, subparsers):
 def run(args):
     tx_handler = TxHandler(*get_icon_service(args.endpoint))
     token = IRC2Token(tx_handler, args.name)
-    address = args.address
-    if args.keystore:
-        address = get_address_from_keystore(args.keystore)
-    if not address:
-        die('Error: keystore or address should be specified')
+    address = args.address if args.address else args.keystore.address
     if args.transfer:
         to = args.transfer
-        token.ask_to_transfer(args, to)
+        token.ask_to_transfer(args.keystore, to)
     elif args.swap:
         token2 = args.swap
         pool_id = BalancedDex(tx_handler).print_pool_id(token.name, token2)
@@ -137,6 +131,6 @@ def run(args):
             die('Error: not supported pool')
         target = IRC2Token(tx_handler, token2)
         target.print_balance(address)
-        token.swap(args, target.address)
+        token.swap(args.keystore, target.address)
     else:
         token.print_balance(address)

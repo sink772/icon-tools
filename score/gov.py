@@ -16,7 +16,7 @@ import json
 
 from score import Score
 from score.chain import ChainScore
-from util import die, print_response, get_icon_service, load_keystore
+from util import die, print_response, get_icon_service
 from util.checks import address_type, tx_hash_type
 from util.txhandler import TxHandler
 
@@ -173,17 +173,13 @@ def run(args):
                     if len(reason) > 0:
                         reject_reason = reason
                 print(f'\"reason\": \"{reject_reason}\"')
-            if not args.keystore:
-                die('Error: keystore should be specified')
-            wallet = load_keystore(args.keystore)
+            wallet = args.keystore.get_wallet()
             if args.accept_score:
                 gov.accept_score(wallet, tx_hash)
             else:
                 gov.reject_score(wallet, tx_hash, reject_reason)
     elif json_file:
-        if not args.keystore:
-            die('Error: keystore should be specified')
-        wallet = load_keystore(args.keystore)
+        wallet = args.keystore.get_wallet()
         with open(json_file, "r") as f:
             contracts: dict = json.loads(f.read())
         gov.process_batch(wallet, contracts, args.accept_batch, args.reason)

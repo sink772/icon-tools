@@ -18,7 +18,7 @@ from datetime import datetime
 import requests
 
 from score.gov import Governance
-from util import die, get_icon_service, get_tracker_prefix, load_keystore, print_response
+from util import die, get_icon_service, get_tracker_prefix, print_response
 from util.txhandler import TxHandler
 
 STATUS_OK = 200
@@ -78,25 +78,21 @@ class Audit(object):
         return ret
 
     def accept_score(self, contract):
-        if not self._keystore:
-            die('Error: keystore should be specified')
         tx_hash = contract['createTx']
         gov = Governance(self._tx_handler)
         if gov.check_if_tx_pending(tx_hash):
-            wallet = load_keystore(self._keystore)
+            wallet = self._keystore.get_wallet()
             gov.accept_score(wallet, tx_hash)
         return False
 
     def reject_score(self, contract):
-        if not self._keystore:
-            die('Error: keystore should be specified')
         tx_hash = contract['createTx']
         reason = input('\n==> Reason: ')
         if len(reason) > 0:
             gov = Governance(self._tx_handler)
             if gov.check_if_tx_pending(tx_hash):
                 print(f'\"reason\": \"{reason}\"')
-                wallet = load_keystore(self._keystore)
+                wallet = self._keystore.get_wallet()
                 gov.reject_score(wallet, tx_hash, reason)
         return False
 

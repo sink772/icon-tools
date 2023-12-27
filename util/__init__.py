@@ -12,14 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import getpass
 import json
 import sys
 
-from iconsdk.exception import KeyStoreException
 from iconsdk.icon_service import IconService
 from iconsdk.providers.http_provider import HTTPProvider
-from iconsdk.wallet.wallet import KeyWallet
 
 
 def die(message):
@@ -72,19 +69,3 @@ def get_tracker_prefix(nid):
         0x7: 'https://tracker.berlin.icon.community',
     }
     return tracker_map.get(nid, None)
-
-
-def get_address_from_keystore(keystore):
-    path = keystore.name
-    with open(path, encoding='utf-8-sig') as f:
-        keyfile: dict = json.load(f)
-        return keyfile.get('address')
-
-
-def load_keystore(keystore, passwd=None):
-    try:
-        if passwd is None:
-            passwd = getpass.getpass()
-        return KeyWallet.load(keystore.name, passwd)
-    except KeyStoreException as e:
-        die(e.message)

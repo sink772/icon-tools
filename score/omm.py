@@ -13,7 +13,7 @@
 # limitations under the License.
 
 from score import Score
-from util import get_icon_service, die, load_keystore
+from util import get_icon_service
 from util.txhandler import TxHandler
 
 
@@ -26,10 +26,10 @@ class OmmLendingPool(Score):
     def claim_rewards(self, wallet):
         return self.invoke(wallet, 'claimRewards')
 
-    def ask_to_claim(self, keystore, passwd):
+    def ask_to_claim(self, keystore):
         confirm = input('\n==> Are you sure you want to claim? (y/n) ')
         if confirm == 'y':
-            wallet = load_keystore(keystore, passwd)
+            wallet = keystore.get_wallet()
             tx_hash = self.claim_rewards(wallet)
             self._tx_handler.ensure_tx_result(tx_hash, True)
 
@@ -46,6 +46,4 @@ def run(args):
     tx_handler = TxHandler(*get_icon_service(args.endpoint))
     lending_pool = OmmLendingPool(tx_handler)
     if args.claim:
-        if not args.keystore:
-            die('Error: keystore should be specified to claim')
-        lending_pool.ask_to_claim(args.keystore, args.password)
+        lending_pool.ask_to_claim(args.keystore)

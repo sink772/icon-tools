@@ -16,7 +16,7 @@ from iconsdk.exception import JSONRPCException
 
 from iiss.stake import Stake
 from score.gov import Governance
-from util import die, in_icx, get_icon_service, get_address_from_keystore, print_response, load_keystore
+from util import die, in_icx, get_icon_service, print_response
 from util.checks import address_type
 from util.txhandler import TxHandler
 
@@ -40,11 +40,10 @@ class ICX(object):
         print_response(address, status)
         return balance
 
-    def transfer(self, address, to, args):
+    def transfer(self, address, to, amount, keystore):
         balance = self.balance(address, False)
         tx_fee = self.get_default_tx_fee()
         maximum = balance - tx_fee
-        amount = args.amount
         if not amount:
             value = input('\n==> Amount of transfer in loop (or [a]ll): ')
             try:
@@ -56,7 +55,7 @@ class ICX(object):
                 die(f'Error: value should be integer')
         self.ensure_amount(amount, maximum)
         if self.ask_to_confirm(to, balance, amount, tx_fee):
-            wallet = load_keystore(args.keystore, args.password)
+            wallet = keystore.get_wallet()
             tx_hash = self._tx_handler.transfer(wallet, to, amount)
             self._tx_handler.ensure_tx_result(tx_hash, True)
 
@@ -106,16 +105,12 @@ def add_parser(cmd, subparsers):
 def run(args):
     tx_handler = TxHandler(*get_icon_service(args.endpoint))
     icx = ICX(tx_handler)
-    address = args.address
-    if args.keystore:
-        address = get_address_from_keystore(args.keystore)
-    if not address:
-        die('Error: keystore or address should be specified')
+    address = args.address if args.address else args.keystore.address
     if args.transfer:
         to = args.transfer
-        icx.transfer(address, to, args)
+        icx.transfer(address, to, args.amount, args.keystore)
     elif args.private:
-        wallet = load_keystore(args.keystore, args.password)
+        wallet = args.keystore.get_wallet()
         print("private key =", wallet.get_private_key())
     else:
         icx.balance(address, args.all)

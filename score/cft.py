@@ -14,7 +14,7 @@
 
 from score import Score
 from score.token import IRC2Token
-from util import get_icon_service, get_address_from_keystore, die, print_response, load_keystore, in_icx
+from util import get_icon_service, die, print_response, in_icx
 from util.checks import address_type
 from util.txhandler import TxHandler
 
@@ -36,14 +36,14 @@ class CraftStaking(Score):
         print(f'"{bal}" ({price_in_icx:.2f} CFT)')
         return price_in_loop
 
-    def stake(self, address, token, args):
+    def stake(self, address, token, keystore):
         self.print_balance(address)
-        token.ask_to_transfer(args, self._address)
+        token.ask_to_transfer(keystore, self._address)
 
     def unstake(self, wallet, value):
         return self.invoke(wallet, 'unstake', {"_id": 0x0, "_value": value})
 
-    def ask_to_unstake(self, address, args):
+    def ask_to_unstake(self, address, keystore):
         maximum = self.print_balance(address)
         amount = maximum
         value = input('\n==> Amount of unstake in loop (or [a]ll): ')
@@ -58,7 +58,7 @@ class CraftStaking(Score):
         print(f'amount: {amount} ({in_icx(amount)})')
         confirm = input('\n==> Are you sure you want to unstake? (y/n) ')
         if confirm == 'y':
-            wallet = load_keystore(args.keystore, args.password)
+            wallet = keystore.get_wallet()
             tx_hash = self.unstake(wallet, amount)
             self._tx_handler.ensure_tx_result(tx_hash, True)
 
@@ -69,13 +69,11 @@ class CraftStaking(Score):
         die(f'Error: value should be 0 < (value) <= {maximum}')
 
     def run(self, args, token):
-        if not args.keystore:
-            die('Error: keystore should be specified')
-        address = get_address_from_keystore(args.keystore)
+        address = args.keystore.address
         if args.stake:
-            self.stake(address, token, args)
+            self.stake(address, token, args.keystore)
         elif args.unstake:
-            self.ask_to_unstake(address, args)
+            self.ask_to_unstake(address, args.keystore)
 
 
 class CraftReward(Score):
@@ -143,7 +141,7 @@ class CraftReward(Score):
     def ask_to_claim(self, args):
         confirm = input('\n==> Are you sure you want to claim? (y/n) ')
         if confirm == 'y':
-            wallet = load_keystore(args.keystore, args.password)
+            wallet = args.keystore.get_wallet()
             if args.claim_lp:
                 tx_hash = self.claim_lp_rewards(wallet, args.stake is True)
             elif args.claim_staking:
@@ -151,9 +149,7 @@ class CraftReward(Score):
             self._tx_handler.ensure_tx_result(tx_hash, True)
 
     def run(self, args, token):
-        if not args.keystore:
-            die('Error: keystore should be specified to claim')
-        address = get_address_from_keystore(args.keystore)
+        address = args.keystore.address
         token.print_balance(address)
         self.print_rewards(address)
         self.ask_to_claim(args)
@@ -173,15 +169,11 @@ def add_parser(cmd, subparsers):
 
 def run(args):
     tx_handler = TxHandler(*get_icon_service(args.endpoint))
-    address = args.address
-    if args.keystore:
-        address = get_address_from_keystore(args.keystore)
-    if not address:
-        die('Error: keystore or address should be specified')
     token = IRC2Token(tx_handler, 'cft')
     if args.claim_lp or args.claim_staking:
         CraftReward(tx_handler).run(args, token)
     elif args.stake or args.unstake:
         CraftStaking(tx_handler).run(args, token)
     else:
+        address = args.address if args.address else args.keystore.address
         token.print_balance(address)

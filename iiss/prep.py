@@ -19,8 +19,9 @@ from iconsdk.exception import JSONRPCException
 from iconsdk.wallet.wallet import KeyWallet
 
 from score.chain import ChainScore
-from util import die, in_loop, print_response, get_icon_service, load_keystore
+from util import die, in_loop, print_response, get_icon_service
 from util.checks import address_type
+from util.keystore import Keystore
 from util.txhandler import TxHandler
 
 
@@ -84,9 +85,9 @@ class PRep(object):
         print(f"min_delegate_value = ({min_delegate_value}, {min_delegate_value // 10 ** 18})")
         return min_delegate_value
 
-    def register_prep_by_keystore(self, god_keystore, keystore):
-        god_wallet = load_keystore(god_keystore)
-        wallet = load_keystore(keystore, 'gochain')
+    def register_prep_by_keystore(self, god_keystore, prep_keystore):
+        god_wallet = god_keystore.get_wallet()
+        wallet = prep_keystore.get_wallet()
         # transfer the required icx from the god wallet
         stake_amount = self.get_minimum_delegation()
         bond_amount = in_loop(100_000)
@@ -117,7 +118,7 @@ class PRep(object):
         self._tx_handler.ensure_tx_result(tx_hash)
 
     def register_test_preps(self, keystore, preps_num):
-        god_wallet = load_keystore(keystore)
+        god_wallet = keystore.get_wallet()
         min_delegate_value = self.get_minimum_delegation()
         transfer_value = in_loop(105_000)
         # add god wallet as the 1st prep
@@ -162,7 +163,7 @@ class PRep(object):
         self._tx_handler.ensure_tx_result(tx_hash)
 
     def do_self_bond(self, keystore, amount):
-        wallet = load_keystore(keystore)
+        wallet = keystore.get_wallet()
         tx_hash = self.set_bond(wallet, in_loop(amount))
         self._tx_handler.ensure_tx_result(tx_hash)
 
@@ -193,10 +194,9 @@ def run(args):
             exit(0)
         except JSONRPCException as e:
             die(f'Error: {e}')
-    if not args.keystore:
-        die('Error: keystore should be specified')
     if args.register_prep:
-        prep.register_prep_by_keystore(args.keystore, args.register_prep)
+        prep_keystore = Keystore(args.register_prep, 'gochain')
+        prep.register_prep_by_keystore(args.keystore, prep_keystore)
         exit(0)
     elif args.self_bond:
         prep.do_self_bond(args.keystore, args.self_bond)

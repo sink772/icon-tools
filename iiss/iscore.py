@@ -13,7 +13,7 @@
 # limitations under the License.
 
 from score.chain import ChainScore
-from util import die, in_icx, print_response, get_icon_service, get_address_from_keystore, load_keystore
+from util import in_icx, print_response, get_icon_service
 from util.checks import address_type
 from util.txhandler import TxHandler
 
@@ -33,10 +33,10 @@ class IScore(object):
     def claim(self, wallet):
         return self._chain.invoke(wallet, "claimIScore")
 
-    def ask_to_claim(self, keystore, passwd):
+    def ask_to_claim(self, keystore):
         confirm = input('\n==> Are you sure you want to claim the IScore? (y/n) ')
         if confirm == 'y':
-            wallet = load_keystore(keystore, passwd)
+            wallet = keystore.get_wallet()
             tx_hash = self.claim(wallet)
             self._tx_handler.ensure_tx_result(tx_hash, True)
 
@@ -60,13 +60,7 @@ def add_parser(cmd, subparsers):
 def run(args):
     tx_handler = TxHandler(*get_icon_service(args.endpoint))
     iscore = IScore(tx_handler)
-    address = args.address
-    if args.keystore:
-        address = get_address_from_keystore(args.keystore)
-    if not address:
-        die('Error: keystore or address should be specified')
+    address = args.address if args.address else args.keystore.address
     iscore.print_status(address)
     if args.claim:
-        if not args.keystore:
-            die('Error: keystore should be specified to claim')
-        iscore.ask_to_claim(args.keystore, args.password)
+        iscore.ask_to_claim(args.keystore)

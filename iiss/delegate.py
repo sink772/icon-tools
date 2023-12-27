@@ -18,7 +18,7 @@ from iconsdk.exception import JSONRPCException
 
 from iiss.prep import PRep
 from score.chain import ChainScore
-from util import die, in_icx, print_response, get_icon_service, get_address_from_keystore, load_keystore
+from util import die, in_icx, print_response, get_icon_service
 from util.checks import address_type
 from util.txhandler import TxHandler
 
@@ -50,11 +50,11 @@ class Delegate(object):
         result = self.query(address)
         return int(result['totalDelegated'], 16)
 
-    def ask_to_set(self, result, keystore, passwd):
+    def ask_to_set(self, result, keystore):
         confirm = input('\n==> Are you sure you want to set new delegations? (y/n) ')
         if confirm == 'y':
             delegations = self._get_new_delegations(result)
-            wallet = load_keystore(keystore, passwd)
+            wallet = keystore.get_wallet()
             tx_hash = self.set(wallet, delegations)
             self._tx_handler.ensure_tx_result(tx_hash, True)
 
@@ -146,15 +146,8 @@ def add_parser(cmd, subparsers):
 def run(args):
     tx_handler = TxHandler(*get_icon_service(args.endpoint))
     delegate = Delegate(tx_handler)
-    if args.keystore:
-        address = get_address_from_keystore(args.keystore)
-    elif args.address:
-        address = args.address
-    else:
-        die('Error: keystore or address should be specified')
+    address = args.address if args.address else args.keystore.address
     result = delegate.query(address)
     delegate.print_status(address, result)
     if args.set:
-        if not args.keystore:
-            die('Error: keystore should be specified to set delegations')
-        delegate.ask_to_set(result, args.keystore, args.password)
+        delegate.ask_to_set(result, args.keystore)

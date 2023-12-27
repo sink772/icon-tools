@@ -6,6 +6,7 @@ from icx import icx
 from iiss import iscore, stake, delegate, prep, info
 from score import gov, audit, token, baln, sicx, cft, omm, gbet
 from util import inspect
+from util.keystore import Keystore
 
 
 class Command(object):
@@ -27,6 +28,7 @@ class Command(object):
             mod.add_parser(self, subparsers)
 
         args = parser.parse_args()
+        setattr(args, 'keystore', Keystore(args.keystore, args.password))
         getattr(self, args.command)(args)
 
 

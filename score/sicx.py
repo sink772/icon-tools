@@ -15,7 +15,7 @@
 from icx.icx import ICX
 from score import Score
 from score.token import IRC2Token
-from util import get_icon_service, die, load_keystore, get_address_from_keystore, in_icx, print_response
+from util import get_icon_service, die, in_icx, print_response
 from util.txhandler import TxHandler
 
 
@@ -37,7 +37,7 @@ class StakedICXManager(Score):
     def user_unstake_info(self, address):
         return self.call('getUserUnstakeInfo', {'_address': address})
 
-    def ask_to_stake(self, address, args):
+    def ask_to_stake(self, address, keystore):
         maximum = ICX(self._tx_handler).balance(address, False)
         amount = maximum
         value = input('\n==> Amount of transfer in loop: ')
@@ -47,14 +47,14 @@ class StakedICXManager(Score):
             die(f'Error: value should be integer')
         self.ensure_amount(amount, maximum)
         if self.ask_to_confirm(self.STAKING_MAN, maximum, amount):
-            wallet = load_keystore(args.keystore, args.password)
+            wallet = keystore.get_wallet()
             tx_hash = self.stake_icx(wallet, wallet.get_address(), amount)
             self._tx_handler.ensure_tx_result(tx_hash, True)
 
-    def ask_to_claim(self, address, args):
+    def ask_to_claim(self, address, keystore):
         value = self.print_claimable_icx(address)
         if value > 0:
-            wallet = load_keystore(args.keystore, args.password)
+            wallet = keystore.get_wallet()
             tx_hash = self.claim_unstaked_icx(wallet)
             self._tx_handler.ensure_tx_result(tx_hash, True)
         else:
@@ -102,7 +102,7 @@ class StakedICX(IRC2Token):
     def __init__(self, tx_handler: TxHandler):
         super().__init__(tx_handler, 'sicx')
 
-    def ask_to_unstake(self, address, args):
+    def ask_to_unstake(self, address, keystore):
         _, maximum = self.balance(address)
         amount = maximum
         value = input('\n==> Amount of unstake in loop (or [a]ll): ')
@@ -116,7 +116,7 @@ class StakedICX(IRC2Token):
         self.ensure_amount(amount, maximum)
         to = StakedICXManager.STAKING_MAN
         if self.ask_to_confirm(to, maximum, amount):
-            wallet = load_keystore(args.keystore, args.password)
+            wallet = keystore.get_wallet()
             data = b'{"method":"unstake"}'
             tx_hash = self.transfer(wallet, to, amount, data)
             self._tx_handler.ensure_tx_result(tx_hash, True)
@@ -135,16 +135,14 @@ def add_parser(cmd, subparsers):
 
 def run(args):
     tx_handler = TxHandler(*get_icon_service(args.endpoint))
-    if not args.keystore:
-        die('Error: keystore should be specified to run')
-    address = get_address_from_keystore(args.keystore)
     sicx = StakedICX(tx_handler)
+    address = args.keystore.address
     sicx.print_balance(address)
     if args.stake:
-        StakedICXManager(tx_handler).ask_to_stake(address, args)
+        StakedICXManager(tx_handler).ask_to_stake(address, args.keystore)
     elif args.claim:
-        StakedICXManager(tx_handler).ask_to_claim(address, args)
+        StakedICXManager(tx_handler).ask_to_claim(address, args.keystore)
     elif args.info:
         StakedICXManager(tx_handler).get_unstake_info(address)
     elif args.unstake:
-        sicx.ask_to_unstake(address, args)
+        sicx.ask_to_unstake(address, args.keystore)

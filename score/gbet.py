@@ -14,7 +14,7 @@
 
 from score import Score
 from score.token import IRC2Token
-from util import get_icon_service, die, load_keystore, print_response, in_icx, get_address_from_keystore
+from util import get_icon_service, print_response, in_icx
 from util.txhandler import TxHandler
 
 
@@ -40,7 +40,7 @@ class GBetSkill(Score):
     def ask_to_claim(self, keystore, nft_id):
         confirm = input('\n==> Are you sure you want to claim? (y/n) ')
         if confirm == 'y':
-            wallet = load_keystore(keystore, None)
+            wallet = keystore.get_wallet()
             tx_hash = self.claim_allocated_amt(wallet, nft_id)
             self._tx_handler.ensure_tx_result(tx_hash, True)
 
@@ -60,10 +60,8 @@ def run(args):
         nft_id = args.claim
         amount = gbet.print_claim_amount(nft_id)
         if amount > 0:
-            if not args.keystore:
-                die('Error: keystore should be specified')
             gbet.ask_to_claim(args.keystore, nft_id)
-    elif args.keystore:
-        address = get_address_from_keystore(args.keystore)
+    else:
+        address = args.keystore.address
         token = IRC2Token(tx_handler, 'gbet')
         token.print_balance(address)

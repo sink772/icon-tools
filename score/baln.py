@@ -15,7 +15,7 @@
 import json
 
 from score import Score
-from util import get_icon_service, get_address_from_keystore, die, print_response, in_icx, load_keystore
+from util import get_icon_service, die, print_response, in_icx
 from util.checks import address_type
 from util.txhandler import TxHandler
 
@@ -84,10 +84,8 @@ class BalancedDex(Score):
         print(f'{token1}/{token2} = {pool_id}')
         return pool_id
 
-    def transfer_token(self, pool_id, args):
-        if not args.keystore:
-            die('Error: keystore should be specified')
-        address = get_address_from_keystore(args.keystore)
+    def transfer_token(self, pool_id, to, keystore):
+        address = keystore.address
         maximum = self.print_balance(pool_id, address)
         amount = maximum
         value = input('\n==> Amount of transfer in loop (or [a]ll): ')
@@ -99,9 +97,9 @@ class BalancedDex(Score):
         except ValueError:
             die(f'Error: value should be integer')
         self.ensure_amount(amount, maximum)
-        if self.ask_to_confirm(args.to, maximum, amount):
-            wallet = load_keystore(args.keystore, args.password)
-            tx_hash = self.transfer(wallet, args.to, pool_id, amount)
+        if self.ask_to_confirm(to, maximum, amount):
+            wallet = keystore.get_wallet()
+            tx_hash = self.transfer(wallet, to, pool_id, amount)
             self._tx_handler.ensure_tx_result(tx_hash, True)
 
     @staticmethod
@@ -134,10 +132,8 @@ class BalancedRewards(Score):
     def claim_rewards(self, wallet):
         return self.invoke(wallet, 'claimRewards')
 
-    def ask_to_claim(self, args):
-        if not args.keystore:
-            die('Error: keystore should be specified')
-        wallet = load_keystore(args.keystore, args.password)
+    def ask_to_claim(self, keystore):
+        wallet = keystore.get_wallet()
         tx_hash = self.claim_rewards(wallet)
         self._tx_handler.ensure_tx_result(tx_hash, True)
 
@@ -161,11 +157,7 @@ def run(args):
     dex = BalancedDex(tx_handler)
     if args.balance:
         pool_id = args.balance
-        address = args.address
-        if args.keystore:
-            address = get_address_from_keystore(args.keystore)
-        if not address:
-            die('Error: keystore or address should be specified')
+        address = args.address if args.address else args.keystore.address
         dex.print_balance(pool_id, address)
     elif args.pool_stats:
         pool_id = args.pool_stats
@@ -178,6 +170,6 @@ def run(args):
         pool_id = args.transfer
         if not args.to:
             die('Error: recipient address should be specified')
-        dex.transfer_token(pool_id, args)
+        dex.transfer_token(pool_id, args.to, args.keystore)
     elif args.claim_rewards:
-        BalancedRewards(tx_handler).ask_to_claim(args)
+        BalancedRewards(tx_handler).ask_to_claim(args.keystore)

@@ -17,7 +17,7 @@ from time import sleep
 from iiss.delegate import Delegate
 from iiss.iscore import IScore
 from score.chain import ChainScore
-from util import die, in_icx, in_loop, print_response, get_icon_service, get_address_from_keystore, load_keystore
+from util import die, in_icx, in_loop, print_response, get_icon_service
 from util.checks import address_type
 from util.txhandler import TxHandler
 
@@ -70,11 +70,11 @@ class Stake(object):
         print('Requested amount =', new_amount, f'({in_loop(new_amount)} loop)')
         return new_amount
 
-    def ask_to_set(self, address, current_stake, keystore, passwd):
+    def ask_to_set(self, address, current_stake, keystore):
         confirm = input('\n==> Are you sure you want to set new staking amount? (y/n) ')
         if confirm == 'y':
             new_amount = self._get_new_amount(address, current_stake, False)
-            wallet = load_keystore(keystore, passwd)
+            wallet = keystore.get_wallet()
             tx_hash = self.set(wallet, new_amount)
             self._tx_handler.ensure_tx_result(tx_hash, True)
 
@@ -153,16 +153,15 @@ class AutoStake(Stake):
                     die('Exit')
 
     @staticmethod
-    def _ask_to_continue(keystore, passwd):
-        if passwd is None:
-            confirm = input('\n==> Are you sure you want to continue? (y/n) ')
-            if confirm != 'y':
-                die('Exit')
-        return load_keystore(keystore, passwd)
+    def _ask_to_continue(keystore):
+        confirm = input('\n==> Are you sure you want to continue? (y/n) ')
+        if confirm != 'y':
+            die('Exit')
+        return keystore.get_wallet()
 
-    def run(self, address, current_stake, keystore, passwd):
+    def run(self, address, current_stake, keystore):
         self._show_status(address, current_stake)
-        wallet = self._ask_to_continue(keystore, passwd)
+        wallet = self._ask_to_continue(keystore)
         self._claim_iscore(wallet)
         self._set_stake(wallet, address, current_stake)
         self._set_delegations(wallet, address)
@@ -181,21 +180,14 @@ def add_parser(cmd, subparsers):
 def run(args):
     tx_handler = TxHandler(*get_icon_service(args.endpoint))
     stake = Stake(tx_handler)
-    if args.keystore:
-        address = get_address_from_keystore(args.keystore)
-    elif args.address:
-        address = args.address
-    else:
-        die('Error: keystore or address should be specified')
+    address = args.address if args.address else args.keystore.address
     result = stake.query(address)
     current_stake = int(result['stake'], 16)
     stake.print_status(address, result)
     if args.set:
-        if not args.keystore:
-            die('Error: keystore should be specified to set staking')
         if args.auto:
-            AutoStake(tx_handler).run(address, current_stake, args.keystore, args.password)
+            AutoStake(tx_handler).run(address, current_stake, args.keystore)
         else:
-            stake.ask_to_set(address, current_stake, args.keystore, args.password)
+            stake.ask_to_set(address, current_stake, args.keystore)
     elif args.auto:
         die('Error: "auto" option should be specified with "set"')

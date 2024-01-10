@@ -44,7 +44,6 @@ class IScore(object):
         if result is None:
             result = self.query(address)
         print_response(address, result)
-        print('EstimatedICX =', in_icx(int(result['estimatedICX'], 16)))
 
 
 def add_parser(cmd, subparsers):

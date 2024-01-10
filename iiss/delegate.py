@@ -124,13 +124,12 @@ class Delegate(object):
     def print_delegations(delegations, voting_power, header='delegations'):
         print()
         print_response(header, delegations)
-        print('Remaining votingPower =', voting_power)
+        print('Remaining votingPower =', voting_power, f"({in_icx(voting_power)} ICX)")
 
     @staticmethod
     def print_status(address, result):
         print('\n[Delegation]')
         print_response(address, result)
-        print('DelegatedICX =', in_icx(int(result['totalDelegated'], 16)))
 
 
 def add_parser(cmd, subparsers):

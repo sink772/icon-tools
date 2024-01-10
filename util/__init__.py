@@ -32,16 +32,30 @@ def in_loop(value):
     return value * 10**18
 
 
+def convert(_data):
+    if isinstance(_data, dict):
+        obj = {}
+        for k, v in _data.items():
+            obj[k] = convert(v)
+        return obj
+    elif isinstance(_data, list):
+        obj = []
+        for v in _data:
+            obj.append(convert(v))
+        return obj
+    elif isinstance(_data, str):
+        if _data.startswith("0x") and len(_data) < 64:
+            int_val = int(_data, 16)
+            if int_val > 10**16:
+                return f"{int_val} ({in_icx(int_val)} ICX)"
+            else:
+                return int_val
+    return _data
+
+
 def print_response(header, msg):
-    if isinstance(msg, str):
-        if msg.startswith("0x"):
-            print(f'"{header}": "{msg}" ({int(msg, 16)})')
-        else:
-            print(f'"{header}": "{msg}"')
-    elif isinstance(msg, dict):
-        print(f'"{header}": {json.dumps(msg, indent=4)}')
-    else:
-        print(f'"{header}": "{msg}"')
+    res = convert(msg)
+    print(f'"{header}": {json.dumps(res, indent=4)}')
 
 
 def get_icon_service(endpoint):

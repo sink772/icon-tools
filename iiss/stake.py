@@ -81,7 +81,6 @@ class Stake(object):
     def print_status(address, result):
         print('\n[Stake]')
         print_response(address, result)
-        print('StakedICX =', in_icx(int(result['stake'], 16)))
 
     @staticmethod
     def _check_value(value: str, maximum: int):

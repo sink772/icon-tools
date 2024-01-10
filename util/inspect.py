@@ -59,16 +59,22 @@ class Inspect(object):
 
     def run(self, args):
         path = args.rootdir
+        outdir = path + "-out"
+        print(f'outdir={outdir}')
+        if not os.path.exists(outdir):
+            os.mkdir(outdir)
+        count = 0
         for dirpath, dirnames, filenames in os.walk(path):
-            print(f"dirpath={dirpath}")
+            count += 1
+            print(f"[{count}] dirpath={dirpath}")
             for file in filenames:
                 if file.endswith(".jar"):
-                    self.work_with_zipfile(dirpath, file)
+                    self.work_with_zipfile(dirpath, file, outdir)
 
     @staticmethod
-    def work_with_zipfile(dirpath, file):
+    def work_with_zipfile(dirpath, file, outdir):
         code_jar = os.path.join(dirpath, file)
-        tempdir = tempfile.mkdtemp(prefix="inspect-")
+        tempdir = tempfile.mkdtemp(prefix="inspect-", dir=outdir)
         purge_tmpdir = True
         with zipfile.ZipFile(code_jar, 'r') as zf:
             for f in zf.filelist:
@@ -79,6 +85,9 @@ class Inspect(object):
                     ret = subprocess.run(cmd, capture_output=True)
                     # idx = ret.stdout.find(b'Enum.valueOf')
                     idx = ret.stdout.find(b'Method score/Context.call:"(Ljava/lang/Class;')
+                    # idx = ret.stdout.find(b'Method java/util/Map.values')
+                    # idx = ret.stdout.find(b'getPRepStats')
+                    # idx = ret.stdout.find(b'Method java/lang/StringBuilder')
                     if idx > 0:
                         idx2 = ret.stdout.find(b'\n', idx)
                         print(f"\tFound: {code_jar}/{f.filename}")

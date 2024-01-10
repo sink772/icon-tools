@@ -36,6 +36,9 @@ class PRep(object):
     def get_preps(self):
         return self._chain.call("getPReps")
 
+    def get_bond(self, address):
+        return self._chain.call("getBond", {"address": address})
+
     def register_prep(self, wallet, name):
         _id = re.sub('\\s+', '_', name.lower())
         params = {
@@ -162,9 +165,14 @@ class PRep(object):
         self._tx_handler.ensure_tx_result(tx_hash)
 
     def do_self_bond(self, keystore, amount):
-        wallet = keystore.get_wallet()
-        tx_hash = self.set_bond(wallet, in_loop(amount))
-        self._tx_handler.ensure_tx_result(tx_hash)
+        bond_info = self.get_bond(keystore.address)
+        print_response('Bond Info', bond_info)
+        print('NewBond =', in_loop(amount), f"({amount} ICX)")
+        confirm = input(f'\n==> Are you sure you want to set new bond? (y/n) ')
+        if confirm == 'y':
+            wallet = keystore.get_wallet()
+            tx_hash = self.set_bond(wallet, in_loop(amount))
+            self._tx_handler.ensure_tx_result(tx_hash, True)
 
 
 def add_parser(cmd, subparsers):

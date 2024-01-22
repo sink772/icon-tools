@@ -18,8 +18,10 @@ import subprocess
 import tempfile
 import zipfile
 
+from iiss.prep import PRep
 from score.gov import Governance
 from util import die
+from util.checks import address_type
 
 
 class Inspect(object):
@@ -99,12 +101,53 @@ class Inspect(object):
         if purge_tmpdir:
             os.rmdir(tempdir)
 
+    def start_bisect(self, heights, address):
+        _start, _end = str(heights).split(',')
+        start, end = int(_start), int(_end)
+        if start >= end:
+            die(f"start ({start}) must be less than end ({end})")
+        self.bisect(start, end, address)
+
+    def bisect(self, low, high, address):
+        old = self.check(address, low)
+        new = self.check(address, high)
+        if old == new:
+            die(f"both are same ({old})")
+        print(f"*** start {low} to {high} ({high - low} blocks)")
+        print(f">>> old=({old})")
+        print(f">>> new=({new})")
+        while low < high:
+            mid = (low + high) // 2
+            print(f" - mid: {mid}")
+            ret = self.check(address, mid)
+            if ret == new:
+                high = mid - 1
+            else:
+                low = mid + 1
+                if ret != old:
+                    # found some other intermediate value, reset old
+                    print(f">>> Found other value: height({mid}) ret({ret})")
+                    old = ret
+        ret = self.check(address, low)
+        print(f">>> END: height({low}) ret({ret})")
+
+    def check(self, address, height):
+        prep = PRep(self._tx_handler).get_prep(address, height)
+        # return prep['hasPublicKey']
+        # return prep['grade']
+        # return int(prep['delegated'], 16) / 10**18
+        return int(prep['bonded'], 16)
+
+        # return self._tx_handler.get_balance(address, height)
+
 
 def add_parser(cmd, subparsers):
     name = __name__.split(".")[-1]
     inspect_parser = subparsers.add_parser(name, help='Perform inspect operations')
     inspect_parser.add_argument('--rootdir', type=str, help='Root dir for searching jars')
     inspect_parser.add_argument('--download', type=str, metavar='CONTRACTS_JSON', help='Download contracts')
+    inspect_parser.add_argument('--bisect', type=str, metavar='START,END', help='Start and end heights to bisect')
+    inspect_parser.add_argument('--address', type=address_type, help='target address to perform bisect')
 
     # register method
     setattr(cmd, name, run)
@@ -115,5 +158,9 @@ def run(args):
     json_file = args.download
     if json_file:
         inspect.download_contract(json_file)
+    elif args.bisect:
+        if not args.address:
+            die("Error: address is required")
+        inspect.start_bisect(args.bisect, args.address)
     else:
         inspect.run(args)

@@ -64,11 +64,12 @@ class TxHandler:
     def update(self, wallet, to, content, params=None, limit=None):
         return self._deploy(wallet, to, content, params, limit)
 
-    def call(self, to, method, params=None):
+    def call(self, to, method, params=None, height=None):
         _call = CallBuilder() \
             .to(to) \
             .method(method) \
             .params(params) \
+            .height(height) \
             .build()
         return self._icon_service.call(_call)
 
@@ -92,8 +93,8 @@ class TxHandler:
             .build()
         return self._send_transaction(transaction, wallet, limit)
 
-    def get_balance(self, address):
-        return self._icon_service.get_balance(address)
+    def get_balance(self, address, height=None):
+        return self._icon_service.get_balance(address, height)
 
     def total_supply(self):
         return self._icon_service.get_total_supply()

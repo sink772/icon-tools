@@ -30,7 +30,7 @@ class Governance(Score):
         return super().call(method, params)
 
     # override call implementation
-    def call(self, method, params=None):
+    def call(self, method, params=None, height=None):
         return self._tx_handler.call(ChainScore.ADDRESS, method, params)
 
     def get_version(self):

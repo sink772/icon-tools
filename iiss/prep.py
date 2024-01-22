@@ -30,8 +30,8 @@ class PRep(object):
         self._tx_handler = tx_handler
         self._chain = ChainScore(tx_handler)
 
-    def get_prep(self, address):
-        return self._chain.call("getPRep", {"address": address})
+    def get_prep(self, address, height=None):
+        return self._chain.call("getPRep", {"address": address}, height)
 
     def get_preps(self):
         return self._chain.call("getPReps")

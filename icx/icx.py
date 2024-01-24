@@ -55,7 +55,8 @@ class ICX(object):
         self.ensure_amount(amount, maximum)
         if self.ask_to_confirm(to, balance, amount, tx_fee):
             wallet = keystore.get_wallet()
-            tx_hash = self._tx_handler.transfer(wallet, to, amount)
+            tx_hash = self._tx_handler.transfer(wallet, to, amount,
+                                                tx_fee if to.startswith('hx') else None)
             self._tx_handler.ensure_tx_result(tx_hash, True)
 
     def get_default_tx_fee(self):

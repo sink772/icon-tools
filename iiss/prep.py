@@ -204,7 +204,7 @@ def run(args):
         prep_keystore = Keystore(args.register_prep, 'gochain')
         prep.register_prep_by_keystore(args.keystore, prep_keystore)
         exit(0)
-    elif args.self_bond:
+    elif args.self_bond is not None:
         prep.do_self_bond(args.keystore, args.self_bond)
         exit(0)
     preps_num = args.register_test_preps if args.register_test_preps else 0

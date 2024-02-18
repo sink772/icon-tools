@@ -72,6 +72,9 @@ class PRep(object):
     def set_bonder_list(self, wallet, addresses: list):
         return self._chain.invoke(wallet, "setBonderList", {"bonderList": addresses})
 
+    def request_unjail(self, wallet):
+        return self._chain.invoke(wallet, "requestUnjail")
+
     def print_prep_info(self, prep_addr):
         print_response('P-Rep Info', self.get_prep(prep_addr))
 
@@ -174,6 +177,11 @@ class PRep(object):
             tx_hash = self.set_bond(wallet, in_loop(amount))
             self._tx_handler.ensure_tx_result(tx_hash, True)
 
+    def do_request_unjail(self, keystore):
+        wallet = keystore.get_wallet()
+        tx_hash = self.request_unjail(wallet)
+        self._tx_handler.ensure_tx_result(tx_hash, True)
+
 
 def add_parser(cmd, subparsers):
     prep_parser = subparsers.add_parser('prep', help='P-Rep management')
@@ -182,6 +190,7 @@ def add_parser(cmd, subparsers):
     prep_parser.add_argument('--register-test-preps', type=int, metavar='NUM',
                              help='register NUM of P-Reps for testing')
     prep_parser.add_argument('--self-bond', type=int, metavar='AMOUNT', help='the amount of self-bond in ICX')
+    prep_parser.add_argument('--request-unjail', action='store_true', help='request unjail')
     prep_parser.add_argument('--get', type=address_type, metavar='ADDRESS', help='get P-Rep information')
     prep_parser.add_argument('--get-preps', action='store_true', help='get all P-Reps information')
 
@@ -207,6 +216,9 @@ def run(args):
     elif args.self_bond is not None:
         prep.do_self_bond(args.keystore, args.self_bond)
         exit(0)
+    elif args.request_unjail:
+        prep.do_request_unjail(args.keystore)
+        exit(0)
     preps_num = args.register_test_preps if args.register_test_preps else 0
     if 0 < preps_num <= 100:
         if prep.is_test_endpoint(args.endpoint):
@@ -216,3 +228,4 @@ def run(args):
             die(f'Error: {args.endpoint} is not a test endpoint')
     if preps_num != 0:
         die(f'Error: invalid preps number')
+    prep.print_prep_info(args.keystore.address)

@@ -41,7 +41,9 @@ class ICX(object):
 
     def transfer(self, address, to, amount, keystore):
         balance = self.balance(address, False)
-        tx_fee = self.get_default_tx_fee()
+        default_step = 100_000
+        step_price = self.get_step_price()
+        tx_fee = default_step * step_price
         maximum = balance - tx_fee
         if not amount:
             value = input('\n==> Amount of transfer in loop (or [a]ll): ')
@@ -56,17 +58,16 @@ class ICX(object):
         if self.ask_to_confirm(to, balance, amount, tx_fee):
             wallet = keystore.get_wallet()
             tx_hash = self._tx_handler.transfer(wallet, to, amount,
-                                                tx_fee if to.startswith('hx') else None)
+                                                default_step if to.startswith('hx') else None)
             self._tx_handler.ensure_tx_result(tx_hash, True)
 
-    def get_default_tx_fee(self):
+    def get_step_price(self):
         try:
             gov = Governance(self._tx_handler)
             step_price = int(gov.get_step_price(), 16)
         except JSONRPCException:
             step_price = 12_500_000_000
-        default_step = 100_000
-        return step_price * default_step
+        return step_price
 
     @staticmethod
     def ensure_amount(amount, maximum):

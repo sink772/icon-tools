@@ -88,6 +88,7 @@ class StakedICXManager(Score):
         return False
 
     def get_unstake_info(self, address):
+        self.print_claimable_icx(address)
         info = self.user_unstake_info(address)
         if len(info) > 0:
             print()

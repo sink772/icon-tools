@@ -102,6 +102,9 @@ class TxHandler:
     def get_network_info(self):
         return self._icon_service.get_network_info()
 
+    def get_score_status(self, address, height=None):
+        return self._icon_service.get_score_status(address, height)
+
     def get_tx_result(self, tx_hash):
         return self._icon_service.get_transaction_result(tx_hash)
 

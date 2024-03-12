@@ -13,7 +13,7 @@
 # limitations under the License.
 
 from score.chain import ChainScore
-from util import in_icx, print_response
+from util import print_response
 from util.checks import address_type
 
 
@@ -23,11 +23,11 @@ class IScore(object):
         self._tx_handler = tx_handler
         self._chain = ChainScore(tx_handler)
 
-    def query(self, address):
+    def query(self, address, height=None):
         params = {
             "address": address
         }
-        return self._chain.call("queryIScore", params)
+        return self._chain.call("queryIScore", params, height)
 
     def claim(self, wallet):
         return self._chain.invoke(wallet, "claimIScore")
@@ -39,10 +39,10 @@ class IScore(object):
             tx_hash = self.claim(wallet)
             self._tx_handler.ensure_tx_result(tx_hash, True)
 
-    def print_status(self, address, result=None):
+    def print_status(self, address, result=None, height=None):
         print('\n[IScore]')
         if result is None:
-            result = self.query(address)
+            result = self.query(address, height)
         print_response(address, result)
 
 
@@ -50,6 +50,7 @@ def add_parser(cmd, subparsers):
     iscore_parser = subparsers.add_parser('iscore', help='Query and claim IScore')
     iscore_parser.add_argument('--address', type=address_type, help='target address to perform operations')
     iscore_parser.add_argument('--claim', action='store_true', help='claim the reward that has been received')
+    iscore_parser.add_argument('--height', type=int, help='target block height')
 
     # register method
     setattr(cmd, 'iscore', run)
@@ -58,6 +59,6 @@ def add_parser(cmd, subparsers):
 def run(args):
     iscore = IScore(args.txhandler)
     address = args.address if args.address else args.keystore.address
-    iscore.print_status(address)
+    iscore.print_status(address, result=None, height=args.height)
     if args.claim:
         iscore.ask_to_claim(args.keystore)

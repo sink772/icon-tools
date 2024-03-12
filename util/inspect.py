@@ -63,8 +63,9 @@ class Inspect(object):
         path = args.rootdir
         outdir = path + "-out"
         print(f'outdir={outdir}')
-        if not os.path.exists(outdir):
-            os.mkdir(outdir)
+        if os.path.exists(outdir):
+            die(f'Error: {outdir} already exists')
+        os.mkdir(outdir)
         count = 0
         for dirpath, dirnames, filenames in os.walk(path):
             count += 1
@@ -73,8 +74,7 @@ class Inspect(object):
                 if file.endswith(".jar"):
                     self.work_with_zipfile(dirpath, file, outdir)
 
-    @staticmethod
-    def work_with_zipfile(dirpath, file, outdir):
+    def work_with_zipfile(self, dirpath, file, outdir):
         code_jar = os.path.join(dirpath, file)
         tempdir = tempfile.mkdtemp(prefix="inspect-", dir=outdir)
         purge_tmpdir = True
@@ -85,11 +85,7 @@ class Inspect(object):
                     cf = os.path.join(tempdir, f.filename)
                     cmd = ['java', '-jar', '/ws/jdk/asmtools-7.0-build/release/lib/asmtools.jar', 'jdis', cf]
                     ret = subprocess.run(cmd, capture_output=True)
-                    # idx = ret.stdout.find(b'Enum.valueOf')
-                    idx = ret.stdout.find(b'Method score/Context.call:"(Ljava/lang/Class;')
-                    # idx = ret.stdout.find(b'Method java/util/Map.values')
-                    # idx = ret.stdout.find(b'getPRepStats')
-                    # idx = ret.stdout.find(b'Method java/lang/StringBuilder')
+                    idx = self.find_substr(ret.stdout)
                     if idx > 0:
                         idx2 = ret.stdout.find(b'\n', idx)
                         print(f"\tFound: {code_jar}/{f.filename}")
@@ -100,6 +96,21 @@ class Inspect(object):
                         os.remove(cf)
         if purge_tmpdir:
             os.rmdir(tempdir)
+
+    @staticmethod
+    def find_substr(haystack):
+        needles = [
+            # b'Enum.valueOf',
+            # b'Method score/Context.call:"(Ljava/lang/Class;',
+            # b'Method java/util/Map.values',
+            b'Method java/lang/StringBuffer.replace',
+            b'Method java/lang/StringBuilder.replace',
+        ]
+        for needle in needles:
+            idx = haystack.find(needle)
+            if idx > 0:
+                return idx
+        return -1
 
     def start_bisect(self, heights, address):
         _start, _end = str(heights).split(',')

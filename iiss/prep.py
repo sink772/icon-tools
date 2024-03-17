@@ -19,7 +19,7 @@ from iconsdk.exception import JSONRPCException
 from iconsdk.wallet.wallet import KeyWallet
 
 from score.chain import ChainScore
-from util import die, in_loop, print_response
+from util import die, in_icx, in_loop, print_response
 from util.checks import address_type
 from util.keystore import Keystore
 
@@ -62,12 +62,15 @@ class PRep(object):
                 "value": amount
             }]})
 
-    def set_bond(self, wallet, amount):
+    def set_bond(self, wallet, prep_address, amount):
         return self._chain.invoke(wallet, "setBond", {
             "bonds": [{
-                "address": wallet.get_address(),
+                "address": prep_address,
                 "value": amount
             }]})
+
+    def self_bond(self, wallet, amount):
+        return self.set_bond(wallet, wallet.get_address(), amount)
 
     def set_bonder_list(self, wallet, addresses: list):
         return self._chain.invoke(wallet, "setBonderList", {"bonderList": addresses})
@@ -118,7 +121,7 @@ class PRep(object):
         print(f"setBond")
         tx_hash = self.set_bonder_list(wallet, [wallet.get_address()])
         self._tx_handler.ensure_tx_result(tx_hash)
-        tx_hash = self.set_bond(wallet, bond_amount)
+        tx_hash = self.self_bond(wallet, bond_amount)
         print(f"  [{wallet.get_address()}] tx_hash={tx_hash}")
         self._tx_handler.ensure_tx_result(tx_hash)
 
@@ -163,7 +166,7 @@ class PRep(object):
         self.set_stake(main_prep, min_delegate_value + bond_amount)
         tx_hash = self.set_bonder_list(main_prep, [main_prep.get_address()])
         self._tx_handler.ensure_tx_result(tx_hash)
-        tx_hash = self.set_bond(main_prep, bond_amount)
+        tx_hash = self.self_bond(main_prep, bond_amount)
         print(f"  [{main_prep.get_address()}] tx_hash={tx_hash}")
         self._tx_handler.ensure_tx_result(tx_hash)
 
@@ -174,8 +177,46 @@ class PRep(object):
         confirm = input(f'\n==> Are you sure you want to set new bond? (y/n) ')
         if confirm == 'y':
             wallet = keystore.get_wallet()
-            tx_hash = self.set_bond(wallet, in_loop(amount))
+            tx_hash = self.self_bond(wallet, in_loop(amount))
             self._tx_handler.ensure_tx_result(tx_hash, True)
+
+    def do_set_bond(self, keystore, prep_address):
+        prep_info = self.get_prep(prep_address)
+        print_response('PRep Info', prep_info)
+        bond_info = self.get_bond(keystore.address)
+        print_response('Bond Info', bond_info)
+        if len(bond_info['bonds']) > 0:
+            prep0 = bond_info['bonds'][0]
+            assert(prep_address == prep0['address'])
+            old_bond = int(prep0['value'], 16)
+        else:
+            old_bond = 0
+        voting_power = int(bond_info['votingPower'], 16)
+        max_bond = old_bond + voting_power
+        new_bond = in_loop(self._get_new_amount(in_icx(max_bond)))
+        print('NewBond =', new_bond, f"({in_icx(new_bond)} ICX)")
+        confirm = input(f'\n==> Are you sure you want to set new bond? (y/n) ')
+        if confirm == 'y':
+            wallet = keystore.get_wallet()
+            tx_hash = self.set_bond(wallet, prep_address, new_bond)
+            self._tx_handler.ensure_tx_result(tx_hash, True)
+
+    def _get_new_amount(self, max_amount: int):
+        while True:
+            try:
+                input_value = input('\n==> New bond amount (in ICX)? ')
+                return self._check_value(int(input_value), max_amount)
+            except KeyboardInterrupt:
+                die('exit')
+            except ValueError as e:
+                print('Error:', e.__str__())
+                continue
+
+    @staticmethod
+    def _check_value(amount: int, maximum: int):
+        if 0 <= amount <= maximum:
+            return amount
+        raise ValueError(f'value should be 0 <= (value) <= {maximum}')
 
     def do_request_unjail(self, keystore):
         wallet = keystore.get_wallet()
@@ -190,6 +231,7 @@ def add_parser(cmd, subparsers):
     prep_parser.add_argument('--register-test-preps', type=int, metavar='NUM',
                              help='register NUM of P-Reps for testing')
     prep_parser.add_argument('--self-bond', type=int, metavar='AMOUNT', help='the amount of self-bond in ICX')
+    prep_parser.add_argument('--set-bond', type=address_type, metavar='ADDRESS', help='set bond to the address')
     prep_parser.add_argument('--request-unjail', action='store_true', help='request unjail')
     prep_parser.add_argument('--get', type=address_type, metavar='ADDRESS', help='get P-Rep information')
     prep_parser.add_argument('--get-preps', action='store_true', help='get all P-Reps information')
@@ -215,6 +257,8 @@ def run(args):
         exit(0)
     elif args.self_bond is not None:
         prep.do_self_bond(args.keystore, args.self_bond)
+    elif args.set_bond is not None:
+        prep.do_set_bond(args.keystore, args.set_bond)
         exit(0)
     elif args.request_unjail:
         prep.do_request_unjail(args.keystore)

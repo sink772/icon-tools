@@ -13,6 +13,7 @@
 # limitations under the License.
 
 from icx.icx import ICX
+from iiss.prep import PRep
 from score import Score
 from score.token import IRC2Token
 from util import die, in_icx, print_response
@@ -23,6 +24,7 @@ class StakedICXManager(Score):
 
     def __init__(self, tx_handler):
         super().__init__(tx_handler, self.STAKING_MAN)
+        self._prep = PRep(tx_handler)
 
     def stake_icx(self, wallet, to, value):
         return self.invoke(wallet, 'stakeICX', {'_to': to}, value=value)
@@ -35,6 +37,21 @@ class StakedICXManager(Score):
 
     def user_unstake_info(self, address):
         return self.call('getUserUnstakeInfo', {'_address': address})
+
+    def top_preps(self):
+        return self.call('getTopPreps')
+
+    def valid_preps(self):
+        return self.call('getValidPreps')
+
+    def actual_delegations(self):
+        return self.call('getActualPrepDelegations')
+
+    def bomm_delegations(self):
+        return self.call('getbOMMDelegations')
+
+    def final_delegations(self):
+        return self.call('getPrepDelegations')
 
     def ask_to_stake(self, address, keystore):
         maximum = ICX(self._tx_handler).balance(address, False)
@@ -96,6 +113,33 @@ class StakedICXManager(Score):
         else:
             print("No unstake info")
 
+    def print_preps(self, get_type):
+        if get_type == "top":
+            preps = self.top_preps()
+        else:
+            preps = self.valid_preps()
+        print("\n>>> Count:", len(preps))
+        name_map = self._prep.prep_names()
+        for p in preps:
+            name = name_map[p]
+            print(f"{p} ({name[:12]:12s})")
+
+    def print_delegations(self, get_type):
+        if get_type == "actual":
+            delegations = self.actual_delegations()
+        elif get_type == "bomm":
+            delegations = self.bomm_delegations()
+        else:
+            delegations = self.final_delegations()
+        name_map = self._prep.prep_names()
+        sorted_delegations = sorted(delegations.items(), key=lambda x: int(x[1], 16), reverse=True)
+        print(">>> Count:", len(sorted_delegations))
+        for d in sorted_delegations:
+            addr = d[0]
+            name = name_map.get(addr, "============")
+            value = int(d[1], 16)
+            print(f"{addr} ({name[:12]:12s}): {value:26d} ({in_icx(value)} ICX)")
+
 
 class StakedICX(IRC2Token):
 
@@ -128,20 +172,30 @@ def add_parser(cmd, subparsers):
     sicx_parser.add_argument('--unstake', action='store_true', help='unstake the given sICX')
     sicx_parser.add_argument('--claim', action='store_true', help='claim unstaked ICX')
     sicx_parser.add_argument('--info', action='store_true', help='get unstake info')
+    sicx_parser.add_argument('--get-preps', type=str, metavar="GET_TYPE", help='get preps [top|valid]')
+    sicx_parser.add_argument('--get-delegations', type=str, metavar="GET_TYPE",
+                             help='get delegations [actual|bomm|final]')
 
     # register method
     setattr(cmd, 'sicx', run)
 
 
 def run(args):
-    sicx = StakedICX(args.txhandler)
+    staking = StakedICXManager(args.txhandler)
+    if args.get_preps:
+        staking.print_preps(args.get_preps)
+        return
+    elif args.get_delegations:
+        staking.print_delegations(args.get_delegations)
+        return
     address = args.keystore.address
+    sicx = StakedICX(args.txhandler)
     sicx.print_balance(address)
     if args.stake:
-        StakedICXManager(args.txhandler).ask_to_stake(address, args.keystore)
+        staking.ask_to_stake(address, args.keystore)
     elif args.claim:
-        StakedICXManager(args.txhandler).ask_to_claim(address, args.keystore)
+        staking.ask_to_claim(address, args.keystore)
     elif args.info:
-        StakedICXManager(args.txhandler).get_unstake_info(address)
+        staking.get_unstake_info(address)
     elif args.unstake:
         sicx.ask_to_unstake(address, args.keystore)

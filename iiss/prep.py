@@ -84,6 +84,13 @@ class PRep(object):
     def print_preps_info(self):
         print_response('P-Reps Info', self.get_preps())
 
+    def prep_names(self):
+        preps = self.get_preps()['preps']
+        name_map = {}
+        for p in list(map(lambda prep: (prep['address'], prep['name']), preps)):
+            name_map[p[0]] = p[1]
+        return name_map
+
     @staticmethod
     def is_test_endpoint(endpoint):
         return endpoint in ('local', 'gochain', 'icon0', 'icon1')

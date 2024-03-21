@@ -126,10 +126,19 @@ class Delegate(object):
         print_response(header, delegations)
         print('Remaining votingPower =', voting_power, f"({in_icx(voting_power)} ICX)")
 
-    @staticmethod
-    def print_status(address, result):
-        print('\n[Delegation]')
-        print_response(address, result)
+    def print_status(self, address, result):
+        print(f"\n[Delegation of \"{address}\"]")
+        delegations = result['delegations']
+        total_delegated = int(result['totalDelegated'], 16)
+        name_map = self._prep.prep_names()
+        sorted_delegations = sorted(delegations, key=lambda d: int(d['value'], 16), reverse=True)
+        print(">>> Count:", len(sorted_delegations))
+        for d in sorted_delegations:
+            addr = d['address']
+            name = name_map[addr]
+            value = int(d['value'], 16)
+            print(f"{addr} ({name[:12]:12s}): {value:26d} ({in_icx(value)} ICX)")
+        print(f"{'>>> Total Delegated:':>58} {total_delegated:26d} ({in_icx(total_delegated)} ICX) <<<")
 
 
 def add_parser(cmd, subparsers):

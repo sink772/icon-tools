@@ -57,7 +57,7 @@ class Info(object):
         print_response('Next', {
             'Remaining': f"{remaining_block}",
             'Countdown': f'{hours}:{minutes:02d}:{seconds:02d}',
-            'EndAt': time.ctime(time.time() + remaining_seconds)
+            'StartAt': time.ctime(time.time() + remaining_seconds)
         })
 
     def print_info(self):

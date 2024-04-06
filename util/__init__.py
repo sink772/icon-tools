@@ -44,7 +44,7 @@ def convert(_data):
             obj.append(convert(v))
         return obj
     elif isinstance(_data, str):
-        if _data.startswith("0x") and len(_data) < 64:
+        if _data.startswith("0x") and 2 < len(_data) < 64:
             int_val = int(_data, 16)
             if int_val > 10**16:
                 return f"{int_val} ({in_icx(int_val)} ICX)"

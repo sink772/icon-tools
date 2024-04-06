@@ -29,11 +29,11 @@ class Delegate(object):
         self._chain = ChainScore(tx_handler)
         self._prep = PRep(tx_handler)
 
-    def query(self, address):
+    def query(self, address, height):
         params = {
             "address": address
         }
-        return self._chain.call("getDelegation", params)
+        return self._chain.call("getDelegation", params, height)
 
     def set(self, wallet, delegations):
         delegation_list = []
@@ -144,6 +144,7 @@ class Delegate(object):
 def add_parser(cmd, subparsers):
     delegate_parser = subparsers.add_parser('delegate', help='Query and set delegations')
     delegate_parser.add_argument('--address', type=address_type, help='target address to perform operations')
+    delegate_parser.add_argument('--height', type=int, help='target block height')
     delegate_parser.add_argument('--set', action='store_true', help='set new delegations')
 
     # register method
@@ -153,7 +154,7 @@ def add_parser(cmd, subparsers):
 def run(args):
     delegate = Delegate(args.txhandler)
     address = args.address if args.address else args.keystore.address
-    result = delegate.query(address)
+    result = delegate.query(address, args.height)
     delegate.print_status(address, result)
     if args.set:
         delegate.ask_to_set(result, args.keystore)

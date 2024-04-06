@@ -44,14 +44,17 @@ class StakedICXManager(Score):
     def valid_preps(self):
         return self.call('getValidPreps')
 
-    def actual_delegations(self):
-        return self.call('getActualPrepDelegations')
+    def undelegated_icx(self, height):
+        return self.call('getUndelegatedICX', height=height)
 
-    def bomm_delegations(self):
-        return self.call('getbOMMDelegations')
+    def actual_delegations(self, height):
+        return self.call('getActualPrepDelegations', height=height)
 
-    def final_delegations(self):
-        return self.call('getPrepDelegations')
+    def bomm_delegations(self, height):
+        return self.call('getbOMMDelegations', height=height)
+
+    def final_delegations(self, height):
+        return self.call('getPrepDelegations', height=height)
 
     def ask_to_stake(self, address, keystore):
         maximum = ICX(self._tx_handler).balance(address, False)
@@ -94,7 +97,7 @@ class StakedICXManager(Score):
     def ask_to_confirm(address, balance, amount):
         details = {
             "recipient": address,
-            "amount": f"{amount} ({in_icx(amount)})",
+            "amount": f"{amount} ({in_icx(amount)} ICX)",
             "estimated balance after stake": f"{in_icx(balance - amount)} ICX"
         }
         print()
@@ -124,21 +127,26 @@ class StakedICXManager(Score):
             name = name_map[p]
             print(f"{p} ({name[:12]:12s})")
 
-    def print_delegations(self, get_type):
+    def print_delegations(self, get_type, height):
         if get_type == "actual":
-            delegations = self.actual_delegations()
+            delegations = self.actual_delegations(height)
         elif get_type == "bomm":
-            delegations = self.bomm_delegations()
+            delegations = self.bomm_delegations(height)
+            undelegated_icx = int(self.undelegated_icx(height), 16)
+            print(f">>> Undelegated ICX = {undelegated_icx} ({in_icx(undelegated_icx)} ICX)")
         else:
-            delegations = self.final_delegations()
+            delegations = self.final_delegations(height)
         name_map = self._prep.prep_names()
         sorted_delegations = sorted(delegations.items(), key=lambda x: int(x[1], 16), reverse=True)
         print(">>> Count:", len(sorted_delegations))
+        sum = 0
         for d in sorted_delegations:
             addr = d[0]
             name = name_map.get(addr, "============")
             value = int(d[1], 16)
+            sum += value
             print(f"{addr} ({name[:12]:12s}): {value:26d} ({in_icx(value)} ICX)")
+        print(f"{'>>> Total Delegated:':>58} {sum:26d} ({in_icx(sum)} ICX) <<<")
 
 
 class StakedICX(IRC2Token):
@@ -172,6 +180,7 @@ def add_parser(cmd, subparsers):
     sicx_parser.add_argument('--unstake', action='store_true', help='unstake the given sICX')
     sicx_parser.add_argument('--claim', action='store_true', help='claim unstaked ICX')
     sicx_parser.add_argument('--info', action='store_true', help='get unstake info')
+    sicx_parser.add_argument('--height', type=int, help='target block height')
     sicx_parser.add_argument('--get-preps', type=str, metavar="GET_TYPE", help='get preps [top|valid]')
     sicx_parser.add_argument('--get-delegations', type=str, metavar="GET_TYPE",
                              help='get delegations [actual|bomm|final]')
@@ -186,7 +195,7 @@ def run(args):
         staking.print_preps(args.get_preps)
         return
     elif args.get_delegations:
-        staking.print_delegations(args.get_delegations)
+        staking.print_delegations(args.get_delegations, args.height)
         return
     address = args.keystore.address
     sicx = StakedICX(args.txhandler)

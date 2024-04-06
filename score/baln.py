@@ -31,8 +31,8 @@ class BalancedDex(Score):
     def get_price(self, pool_id):
         return self.call("getPrice", {"_id": pool_id})
 
-    def get_pool_stats(self, pool_id):
-        return self.call("getPoolStats", {"_id": pool_id})
+    def get_pool_stats(self, pool_id, height):
+        return self.call("getPoolStats", {"_id": pool_id}, height)
 
     def get_pool_id(self, token1, token2):
         return self.call("getPoolId", {'_token1Address': token1, '_token2Address': token2})
@@ -53,8 +53,8 @@ class BalancedDex(Score):
         print(f'{price_in_loop} ({price_in_icx:.4f})')
         return price_in_loop
 
-    def print_pool_stats(self, pool_id):
-        stats = self.get_pool_stats(pool_id)
+    def print_pool_stats(self, pool_id, height):
+        stats = self.get_pool_stats(pool_id, height)
         pool_name = stats['name']
         price = int(stats['price'], 16)
         base = int(stats['base'], 16)
@@ -146,6 +146,7 @@ def add_parser(cmd, subparsers):
     baln_parser.add_argument('--transfer', type=int, metavar='POOL_ID', help='transfer LP tokens to another address')
     baln_parser.add_argument('--claim-rewards', action='store_true', help='claim baln rewards')
     baln_parser.add_argument('--to', type=address_type, help='the recipient address')
+    baln_parser.add_argument('--height', type=int, help='target block height')
 
     # register method
     setattr(cmd, 'baln', run)
@@ -159,7 +160,7 @@ def run(args):
         dex.print_balance(pool_id, address)
     elif args.pool_stats:
         pool_id = args.pool_stats
-        dex.print_pool_stats(pool_id)
+        dex.print_pool_stats(pool_id, args.height)
     elif args.pool_id:
         token_pair = args.pool_id
         token1, token2 = token_pair.split('/')

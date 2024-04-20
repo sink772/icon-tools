@@ -13,16 +13,24 @@
 # limitations under the License.
 
 from score import Score
+from util import convert
 
 
-class OmmLendingPool(Score):
-    LENDING_POOL = 'cxcb455f26a2c01c686fa7f30e1e3661642dd53c0d'
+class OmmFeeDistribution(Score):
+    DISTRIBUTION = 'cx553b05df18e9d7c00d8bf4675e579cbbb23c4b30'
 
     def __init__(self, tx_handler):
-        super().__init__(tx_handler, self.LENDING_POOL)
+        super().__init__(tx_handler, self.DISTRIBUTION)
+
+    def claimable_fee(self, address):
+        return self.call('getClaimableFee', {'user': address})
 
     def claim_rewards(self, wallet):
         return self.invoke(wallet, 'claimRewards')
+
+    def print_claimable_fee(self, address):
+        print('\n[ClaimableFee]')
+        print(convert(self.claimable_fee(address)))
 
     def ask_to_claim(self, keystore):
         confirm = input('\n==> Are you sure you want to claim? (y/n) ')
@@ -34,13 +42,14 @@ class OmmLendingPool(Score):
 
 def add_parser(cmd, subparsers):
     omm_parser = subparsers.add_parser('omm', help='[SCORE] OMM Finance')
-    omm_parser.add_argument('--claim', action='store_true', help='claim rewards that has been received')
+    omm_parser.add_argument('--claim', action='store_true', help='claim rewards that has been accrued')
 
     # register method
     setattr(cmd, 'omm', run)
 
 
 def run(args):
-    lending_pool = OmmLendingPool(args.txhandler)
+    distribution = OmmFeeDistribution(args.txhandler)
+    distribution.print_claimable_fee(args.keystore.address)
     if args.claim:
-        lending_pool.ask_to_claim(args.keystore)
+        distribution.ask_to_claim(args.keystore)

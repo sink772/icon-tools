@@ -30,6 +30,7 @@ class Inspect(object):
         self._tx_handler = tx_handler
         self._keystore = keystore
         self._endpoint = endpoint
+        self._check_type = "prep.delegated"
 
     def download_contract(self, json_file):
         with open(json_file, "r") as f:
@@ -143,13 +144,23 @@ class Inspect(object):
         print(f">>> END: height({low}) ret({ret})")
 
     def check(self, address, height):
-        prep = PRep(self._tx_handler).get_prep(address, height)
-        # return prep['hasPublicKey']
-        # return prep['grade']
-        # return int(prep['delegated'], 16) / 10**18
-        return int(prep['bonded'], 16)
-
-        # return self._tx_handler.get_balance(address, height)
+        if self._check_type.startswith("prep"):
+            prep = PRep(self._tx_handler).get_prep(address, height)
+            subtype = self._check_type.split('.')[1]
+            if subtype == "delegated":
+                return int(prep['delegated'], 16) / 10**18
+            elif subtype == "bonded":
+                return int(prep['bonded'], 16)
+            elif subtype == "publickey":
+                return prep['hasPublicKey']
+            elif subtype == "grade":
+                return prep['grade']
+        elif self._check_type == "balance":
+            return self._tx_handler.get_balance(address, height)
+        elif self._check_type == "score_owner":
+            status = self._tx_handler.get_score_status(address, height)
+            return status['owner']
+        die(f"unknown check type: {self._check_type}")
 
 
 def add_parser(cmd, subparsers):

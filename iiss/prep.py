@@ -36,9 +36,6 @@ class PRep(object):
     def get_preps(self):
         return self._chain.call("getPReps")
 
-    def get_bond(self, address):
-        return self._chain.call("getBond", {"address": address})
-
     def register_prep(self, wallet, name):
         _id = re.sub('\\s+', '_', name.lower())
         params = {
@@ -52,28 +49,18 @@ class PRep(object):
         }
         return self._chain.invoke(wallet, "registerPRep", params, value=in_loop(2000))
 
-    def set_stake(self, wallet, amount):
-        return self._chain.invoke(wallet, "setStake", {"value": amount})
-
-    def set_delegation(self, wallet, amount):
-        return self._chain.invoke(wallet, "setDelegation", {
-            "delegations": [{
-                "address": wallet.get_address(),
-                "value": amount
-            }]})
+    def self_delegation(self, wallet, amount):
+        return self._chain.setDelegation(wallet, [
+            {"address": wallet.get_address(), "value": amount}
+        ])
 
     def set_bond(self, wallet, prep_address, amount):
-        return self._chain.invoke(wallet, "setBond", {
-            "bonds": [{
-                "address": prep_address,
-                "value": amount
-            }]})
+        return self._chain.setBond(wallet, [
+            {"address": prep_address, "value": amount}
+        ])
 
     def self_bond(self, wallet, amount):
         return self.set_bond(wallet, wallet.get_address(), amount)
-
-    def set_bonder_list(self, wallet, addresses: list):
-        return self._chain.invoke(wallet, "setBonderList", {"bonderList": addresses})
 
     def request_unjail(self, wallet):
         return self._chain.invoke(wallet, "requestUnjail")
@@ -116,17 +103,17 @@ class PRep(object):
         self._tx_handler.ensure_tx_result(tx_hash)
 
         print(f"setStake")
-        tx_hash = self.set_stake(wallet, stake_amount + bond_amount)
+        tx_hash = self._chain.setStake(wallet, stake_amount + bond_amount)
         print(f"  [{wallet.get_address()}] tx_hash={tx_hash}")
         self._tx_handler.ensure_tx_result(tx_hash)
 
         print(f"setDelegation")
-        tx_hash = self.set_delegation(wallet, (stake_amount - bond_amount))
+        tx_hash = self.self_delegation(wallet, (stake_amount - bond_amount))
         print(f"  [{wallet.get_address()}] tx_hash={tx_hash}")
         self._tx_handler.ensure_tx_result(tx_hash)
 
         print(f"setBond")
-        tx_hash = self.set_bonder_list(wallet, [wallet.get_address()])
+        tx_hash = self._chain.setBonderList(wallet, [wallet.get_address()])
         self._tx_handler.ensure_tx_result(tx_hash)
         tx_hash = self.self_bond(wallet, bond_amount)
         print(f"  [{wallet.get_address()}] tx_hash={tx_hash}")
@@ -157,28 +144,28 @@ class PRep(object):
 
         print(f"setStake")
         for i, prep in enumerate(test_preps):
-            tx_hash = self.set_stake(prep, delegates[i])
+            tx_hash = self._chain.setStake(prep, delegates[i])
             print(f"  [{prep.get_address()}] tx_hash={tx_hash}")
         self._tx_handler.ensure_tx_result(tx_hash)
 
         print(f"setDelegation")
         for i, prep in enumerate(test_preps):
-            tx_hash = self.set_delegation(prep, delegates[i])
+            tx_hash = self.self_delegation(prep, delegates[i])
             print(f"  [{prep.get_address()}] tx_hash={tx_hash}")
         self._tx_handler.ensure_tx_result(tx_hash)
 
         print(f"setBond")
         main_prep = test_preps[0]
         bond_amount = in_loop(100_000)
-        self.set_stake(main_prep, min_delegate_value + bond_amount)
-        tx_hash = self.set_bonder_list(main_prep, [main_prep.get_address()])
+        self._chain.setStake(main_prep, min_delegate_value + bond_amount)
+        tx_hash = self._chain.setBonderList(main_prep, [main_prep.get_address()])
         self._tx_handler.ensure_tx_result(tx_hash)
         tx_hash = self.self_bond(main_prep, bond_amount)
         print(f"  [{main_prep.get_address()}] tx_hash={tx_hash}")
         self._tx_handler.ensure_tx_result(tx_hash)
 
     def do_self_bond(self, keystore, amount):
-        bond_info = self.get_bond(keystore.address)
+        bond_info = self._chain.getBond(keystore.address)
         print_response('Bond Info', bond_info)
         print('NewBond =', in_loop(amount), f"({amount} ICX)")
         confirm = input(f'\n==> Are you sure you want to set new bond? (y/n) ')
@@ -190,11 +177,11 @@ class PRep(object):
     def do_set_bond(self, keystore, prep_address):
         prep_info = self.get_prep(prep_address)
         print_response('PRep Info', prep_info)
-        bond_info = self.get_bond(keystore.address)
+        bond_info = self._chain.getBond(keystore.address)
         print_response('Bond Info', bond_info)
         if len(bond_info['bonds']) > 0:
             prep0 = bond_info['bonds'][0]
-            assert(prep_address == prep0['address'])
+            assert (prep_address == prep0['address'])
             old_bond = int(prep0['value'], 16)
         else:
             old_bond = 0
@@ -211,7 +198,7 @@ class PRep(object):
     def _get_new_amount(self, max_amount: int):
         while True:
             try:
-                input_value = input('\n==> New bond amount (in ICX)? ')
+                input_value = input(f'\n==> New bond amount in ICX (max: {max_amount})? ')
                 return self._check_value(int(input_value), max_amount)
             except KeyboardInterrupt:
                 die('exit')

@@ -21,3 +21,30 @@ class ChainScore(Score):
 
     def __init__(self, tx_handler: TxHandler):
         super().__init__(tx_handler, self.ADDRESS)
+
+    def queryIScore(self, address, height=None):
+        return self.call("queryIScore", {"address": address}, height)
+
+    def claimIScore(self, wallet):
+        return self.invoke(wallet, "claimIScore")
+
+    def getStake(self, address, height=None):
+        return self.call("getStake", {"address": address}, height)
+
+    def setStake(self, wallet, value):
+        return self.invoke(wallet, "setStake", {"value": value})
+
+    def getDelegation(self, address, height=None):
+        return self.call("getDelegation", {"address": address}, height)
+
+    def setDelegation(self, wallet, delegations: list):
+        return self.invoke(wallet, "setDelegation", {"delegations": delegations})
+
+    def getBond(self, address, height=None):
+        return self.call("getBond", {"address": address}, height)
+
+    def setBond(self, wallet, bonds: list):
+        return self.invoke(wallet, "setBond", {"bonds": bonds})
+
+    def setBonderList(self, wallet, addresses: list):
+        return self.invoke(wallet, "setBonderList", {"bonderList": addresses})

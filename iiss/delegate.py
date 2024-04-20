@@ -29,21 +29,15 @@ class Delegate(object):
         self._chain = ChainScore(tx_handler)
         self._prep = PRep(tx_handler)
 
-    def query(self, address, height):
-        params = {
-            "address": address
-        }
-        return self._chain.call("getDelegation", params, height)
+    def query(self, address, height=None):
+        return self._chain.getDelegation(address, height)
 
     def set(self, wallet, delegations):
         delegation_list = []
         for address, value in delegations.items():
             if int(value, 16) > 0:
                 delegation_list.append({"address": address, "value": value})
-        params = {
-            "delegations": delegation_list
-        }
-        return self._chain.invoke(wallet, "setDelegation", params)
+        return self._chain.setDelegation(wallet, delegation_list)
 
     def get_total_delegated(self, address):
         result = self.query(address)

@@ -29,16 +29,10 @@ class Stake(object):
         self._delegate = Delegate(tx_handler)
 
     def query(self, address):
-        params = {
-            "address": address
-        }
-        return self._chain.call("getStake", params)
+        return self._chain.getStake(address)
 
-    def set(self, wallet, amount):
-        params = {
-            "value": in_loop(amount)
-        }
-        return self._chain.invoke(wallet, "setStake", params)
+    def set(self, wallet, value_in_icx):
+        return self._chain.setStake(wallet, in_loop(value_in_icx))
 
     def _get_input(self, total_icx):
         while True:

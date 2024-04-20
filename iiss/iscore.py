@@ -24,13 +24,10 @@ class IScore(object):
         self._chain = ChainScore(tx_handler)
 
     def query(self, address, height=None):
-        params = {
-            "address": address
-        }
-        return self._chain.call("queryIScore", params, height)
+        return self._chain.queryIScore(address, height)
 
     def claim(self, wallet):
-        return self._chain.invoke(wallet, "claimIScore")
+        return self._chain.claimIScore(wallet)
 
     def ask_to_claim(self, keystore):
         confirm = input('\n==> Are you sure you want to claim the IScore? (y/n) ')

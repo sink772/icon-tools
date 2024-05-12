@@ -187,7 +187,7 @@ class PRep(object):
             old_bond = 0
         voting_power = int(bond_info['votingPower'], 16)
         max_bond = old_bond + voting_power
-        new_bond = in_loop(self._get_new_amount(in_icx(max_bond)))
+        new_bond = in_loop(self._get_new_amount(int(in_icx(max_bond))))
         print('NewBond =', new_bond, f"({in_icx(new_bond)} ICX)")
         confirm = input(f'\n==> Are you sure you want to set new bond? (y/n) ')
         if confirm == 'y':
@@ -251,6 +251,7 @@ def run(args):
         exit(0)
     elif args.self_bond is not None:
         prep.do_self_bond(args.keystore, args.self_bond)
+        exit(0)
     elif args.set_bond is not None:
         prep.do_set_bond(args.keystore, args.set_bond)
         exit(0)

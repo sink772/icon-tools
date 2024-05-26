@@ -16,7 +16,7 @@ from iconsdk.exception import JSONRPCException
 
 from iiss.stake import Stake
 from score.gov import Governance
-from util import die, in_icx, print_response
+from util import die, in_icx, in_loop, print_response
 from util.checks import address_type
 
 
@@ -50,6 +50,8 @@ class ICX(object):
             try:
                 if len(value) == 1 and value == 'a':
                     amount = maximum
+                elif value.endswith("icx"):
+                    amount = in_loop(int(value[:-3]))
                 else:
                     amount = int(value)
             except ValueError:

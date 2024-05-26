@@ -129,7 +129,7 @@ class Delegate(object):
         print(">>> Count:", len(sorted_delegations))
         for d in sorted_delegations:
             addr = d['address']
-            name = name_map[addr]
+            name = name_map.get(addr, "============")
             value = int(d['value'], 16)
             print(f"{addr} ({name[:12]:12s}): {value:26d} ({in_icx(value)} ICX)")
         print(f"{'>>> Total Delegated:':>58} {total_delegated:26d} ({in_icx(total_delegated)} ICX) <<<")

@@ -62,7 +62,10 @@ class Inspect(object):
 
     def run(self, args):
         path = args.rootdir
-        outdir = path + "-out"
+        if args.outdir:
+            outdir = args.outdir
+        else:
+            outdir = path + "-out"
         print(f'outdir={outdir}')
         if os.path.exists(outdir):
             die(f'Error: {outdir} already exists')
@@ -104,8 +107,9 @@ class Inspect(object):
             # b'Enum.valueOf',
             # b'Method score/Context.call:"(Ljava/lang/Class;',
             # b'Method java/util/Map.values',
-            b'Method java/lang/StringBuffer.replace',
-            b'Method java/lang/StringBuilder.replace',
+            # b'Method java/lang/StringBuffer.replace',
+            # b'Method java/lang/StringBuilder.replace',
+            b'Method java/lang/String.indexOf',
         ]
         for needle in needles:
             idx = haystack.find(needle)
@@ -167,6 +171,7 @@ def add_parser(cmd, subparsers):
     name = __name__.split(".")[-1]
     inspect_parser = subparsers.add_parser(name, help='Perform inspect operations')
     inspect_parser.add_argument('--rootdir', type=str, help='Root dir for searching jars')
+    inspect_parser.add_argument('--outdir', type=str, help='Output dir for the result')
     inspect_parser.add_argument('--download', type=str, metavar='CONTRACTS_JSON', help='Download contracts')
     inspect_parser.add_argument('--bisect', type=str, metavar='START,END', help='Start and end heights to bisect')
     inspect_parser.add_argument('--address', type=address_type, help='target address to perform bisect')

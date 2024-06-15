@@ -14,7 +14,7 @@
 
 from score import Score
 from score.baln import BalancedDex
-from util import die, print_response, in_icx
+from util import die, print_response, in_icx, in_loop
 from util.checks import address_type
 
 
@@ -69,6 +69,8 @@ class IRC2Token(Score):
         try:
             if len(value) == 1 and value == 'a':
                 pass
+            elif value.endswith("icx"):
+                amount = in_loop(int(value[:-3]))
             else:
                 amount = int(value)
         except ValueError:

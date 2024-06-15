@@ -16,7 +16,8 @@ from icx.icx import ICX
 from iiss.prep import PRep
 from score import Score
 from score.token import IRC2Token
-from util import die, in_icx, print_response
+from util import die, in_icx, in_loop, print_response
+from util.checks import address_type
 
 
 class StakedICXManager(Score):
@@ -61,7 +62,10 @@ class StakedICXManager(Score):
         amount = maximum
         value = input('\n==> Amount of transfer in loop: ')
         try:
-            amount = int(value)
+            if value.endswith("icx"):
+                amount = in_loop(int(value[:-3]))
+            else:
+                amount = int(value)
         except ValueError:
             die(f'Error: value should be integer')
         self.ensure_amount(amount, maximum)
@@ -179,6 +183,7 @@ def add_parser(cmd, subparsers):
     sicx_parser.add_argument('--stake', action='store_true', help='stake the given ICX')
     sicx_parser.add_argument('--unstake', action='store_true', help='unstake the given sICX')
     sicx_parser.add_argument('--claim', action='store_true', help='claim unstaked ICX')
+    sicx_parser.add_argument('--transfer', type=address_type, metavar='TO', help='transfer token to the given address')
     sicx_parser.add_argument('--info', action='store_true', help='get unstake info')
     sicx_parser.add_argument('--height', type=int, help='target block height')
     sicx_parser.add_argument('--get-preps', type=str, metavar="GET_TYPE", help='get preps [top|valid]')
@@ -204,6 +209,9 @@ def run(args):
         staking.ask_to_stake(address, args.keystore)
     elif args.claim:
         staking.ask_to_claim(address, args.keystore)
+    elif args.transfer:
+        to = args.transfer
+        sicx.ask_to_transfer(args.keystore, to)
     elif args.info:
         staking.get_unstake_info(address)
     elif args.unstake:

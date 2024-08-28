@@ -96,8 +96,8 @@ class TxHandler:
     def get_balance(self, address, height=None):
         return self._icon_service.get_balance(address, height)
 
-    def total_supply(self):
-        return self._icon_service.get_total_supply()
+    def total_supply(self, height=None):
+        return self._icon_service.get_total_supply(height)
 
     def get_network_info(self):
         return self._icon_service.get_network_info()

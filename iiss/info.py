@@ -15,7 +15,9 @@
 import time
 
 from score.chain import ChainScore
-from util import print_response, die
+from util import print_response, die, in_icx
+
+TREASURY = "hx1000000000000000000000000000000000000000"
 
 
 class Info(object):
@@ -64,11 +66,32 @@ class Info(object):
         print_response('IISS Info', self.get_iiss_info())
         print_response('Network Info', self.get_network_info())
 
+    def print_trend(self, params: str):
+        _key, _value = params.split('=')
+        if _key == "total":
+            trend_func = (lambda h: self._tx_handler.total_supply(h))
+        else:  # _key == "treasury":
+            trend_func = (lambda h: self._tx_handler.get_balance(TREASURY, h))
+        term_info = self.get_prep_term()
+        current_block = int(term_info['blockHeight'], 16)
+        period = int(term_info['period'], 16)
+        try:
+            start_block = int(_value)
+        except ValueError:
+            start_block = current_block - 10 * period
+        prev = trend_func(start_block)
+        for height in range(start_block, current_block, period):
+            current = trend_func(height)
+            diff = current - prev
+            print(f"{height}: {current:25d} ({in_icx(current):18f} ICX) diff:{in_icx(diff):15f}")
+            prev = current
+
 
 def add_parser(cmd, subparsers):
     info_parser = subparsers.add_parser('info', help='Query IISS Information')
     info_parser.add_argument('--term', action='store_true', help='show the term info')
     info_parser.add_argument('--end-block', type=int, help='show the remaining time to end block')
+    info_parser.add_argument('--trend', type=str, metavar='KEY=START', help='show the volume trend [total,treasury]')
 
     # register method
     setattr(cmd, 'info', run)
@@ -80,5 +103,7 @@ def run(args):
         info.print_term_info()
     elif args.end_block:
         info.print_term_info(args.end_block)
+    elif args.trend:
+        info.print_trend(args.trend)
     else:
         info.print_info()

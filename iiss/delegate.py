@@ -29,8 +29,11 @@ class Delegate(object):
         self._chain = ChainScore(tx_handler)
         self._prep = PRep(tx_handler)
 
-    def query(self, address, height=None):
-        return self._chain.getDelegation(address, height)
+    def query(self, address, height=None, bond=False):
+        if bond:
+            return self._chain.getBond(address, height)
+        else:
+            return self._chain.getDelegation(address, height)
 
     def set(self, wallet, delegations):
         delegation_list = []
@@ -120,10 +123,21 @@ class Delegate(object):
         print_response(header, delegations)
         print('Remaining votingPower =', voting_power, f"({in_icx(voting_power)} ICX)")
 
-    def print_status(self, address, result):
-        print(f"\n[Delegation of \"{address}\"]")
-        delegations = result['delegations']
-        total_delegated = int(result['totalDelegated'], 16)
+    def print_status(self, address, result, bond=False):
+        if bond:
+            keymap = {"header": "Bonds",
+                      "name": "bonds",
+                      "total": "totalBonded",
+                      "footer": "Total Bonded"}
+        else:
+            keymap = {"header": "Delegations",
+                      "name": "delegations",
+                      "total": "totalDelegated",
+                      "footer": "Total Delegated"}
+
+        print(f"\n[{keymap['header']} of \"{address}\"]")
+        delegations = result[keymap['name']]
+        total_delegated = int(result[keymap['total']], 16)
         name_map = self._prep.prep_names()
         sorted_delegations = sorted(delegations, key=lambda d: int(d['value'], 16), reverse=True)
         print(">>> Count:", len(sorted_delegations))
@@ -132,7 +146,7 @@ class Delegate(object):
             name = name_map.get(addr, "============")
             value = int(d['value'], 16)
             print(f"{addr} ({name[:12]:12s}): {value:26d} ({in_icx(value)} ICX)")
-        print(f"{'>>> Total Delegated:':>58} {total_delegated:26d} ({in_icx(total_delegated)} ICX) <<<")
+        print(f"{'>>> ' + keymap['footer'] + ':':>58} {total_delegated:26d} ({in_icx(total_delegated)} ICX) <<<")
 
 
 def add_parser(cmd, subparsers):
@@ -140,6 +154,7 @@ def add_parser(cmd, subparsers):
     delegate_parser.add_argument('--address', type=address_type, help='target address to perform operations')
     delegate_parser.add_argument('--height', type=int, help='target block height')
     delegate_parser.add_argument('--set', action='store_true', help='set new delegations')
+    delegate_parser.add_argument('--bond', action='store_true', help='perform bond operations')
 
     # register method
     setattr(cmd, 'delegate', run)
@@ -148,7 +163,7 @@ def add_parser(cmd, subparsers):
 def run(args):
     delegate = Delegate(args.txhandler)
     address = args.address if args.address else args.keystore.address
-    result = delegate.query(address, args.height)
-    delegate.print_status(address, result)
+    result = delegate.query(address, args.height, args.bond)
+    delegate.print_status(address, result, args.bond)
     if args.set:
         delegate.ask_to_set(result, args.keystore)
